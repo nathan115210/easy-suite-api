@@ -1,0 +1,1 @@
+pnpm git:check-commit "$1"

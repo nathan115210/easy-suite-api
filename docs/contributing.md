@@ -5,6 +5,8 @@ This project is still in its foundation stage. The goal for contributors is to k
 ## Core Rules
 
 - Use pnpm from the repository root.
+- Name branches with `feat/`, `fix/`, or `chore/`.
+- Use scoped Conventional Commits: `type(scope): message`.
 - Keep app-specific code inside the owning app under `apps/`.
 - Put shared helpers in `packages/` only when more than one app can reasonably reuse them.
 - Prefer small, versioned route modules over large route files.
@@ -73,6 +75,40 @@ pnpm dev:api new-api
 ```
 
 No root script changes are needed.
+
+## Git Naming Rules
+
+Branch names must use one of these prefixes:
+
+```text
+feat/<name>
+fix/<name>
+chore/<name>
+```
+
+Examples:
+
+```text
+feat/add-profile-api
+fix/health-check-status
+chore/base-ci
+```
+
+Commit messages must use scoped Conventional Commit format:
+
+```text
+type(scope): message
+```
+
+Examples:
+
+```text
+chore(ci): add base workflow
+feat(api): add profile route
+fix(config): validate database url
+```
+
+Husky checks branch names before commit and push. It checks commit messages with the `commit-msg` hook.
 
 ## Before Opening a Pull Request
 

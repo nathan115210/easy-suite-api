@@ -2,9 +2,13 @@ name: Base Checks
 
 on:
   pull_request:
+    branches:
+      - master
   push:
     branches:
-      - main
+      - 'feat/**'
+      - 'fix/**'
+      - 'chore/**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -13,6 +17,7 @@ jobs:
   base:
     name: Lint, typecheck, and test
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'feat/') || startsWith(github.head_ref, 'fix/') || startsWith(github.head_ref, 'chore/')
 
     steps:
       - name: Checkout repository
