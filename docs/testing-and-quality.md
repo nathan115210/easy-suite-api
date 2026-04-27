@@ -79,3 +79,9 @@ pnpm lint
 pnpm typecheck
 pnpm test
 ```
+
+To run the GitHub Actions base workflow locally through Docker, use:
+
+```bash
+pnpm ci:local
+```

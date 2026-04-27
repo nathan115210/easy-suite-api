@@ -72,6 +72,7 @@ Useful local URLs:
 pnpm dev
 pnpm dev:app easy-meal-api
 pnpm dev:api easy-meal-api
+pnpm ci:local
 pnpm build
 pnpm lint
 pnpm typecheck
@@ -89,6 +90,7 @@ pnpm dev:db:reset
 
 - [Development Setup](docs/development.md)
 - [Contributor Guide](docs/contributing.md)
+- [CI and Local Workflow Testing](docs/ci.md)
 - [Architecture](docs/architecture.md)
 - [API Documentation](docs/api.md)
 - [Database](docs/database.md)
