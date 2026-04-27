@@ -26,6 +26,7 @@
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
     "db:push": "turbo run db:push",
+    "db:studio": "turbo run db:studio",
     "db:check": "turbo run db:check",
     "dev:db": "docker compose up -d postgres",
     "dev:db:down": "docker compose down",

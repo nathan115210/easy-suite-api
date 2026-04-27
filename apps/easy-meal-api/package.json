@@ -7,11 +7,13 @@
     "build": "tsc -p tsconfig.json",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" --no-error-on-unmatched-pattern",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:check": "drizzle-kit check"
+    "test": "jest --passWithNoTests",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:push": "npx drizzle-kit push --config=drizzle.config.ts",
+    "db:studio": "npx drizzle-kit studio --config=drizzle.config.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:check": "drizzle-kit check --config=drizzle.config.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.5.0",

@@ -1,12 +1,7 @@
 import { Router } from 'express';
-
+import { mealsRouter } from '../modules/meals/meals.routes';
 export const v1Router = Router();
 
-v1Router.get('/health', (_req, res) => {
-  res.status(200).json({
-    data: {
-      status: 'ok',
-      service: 'easy-meal-api',
-    },
-  });
-});
+// Register module routers for version 1 of the API
+//meals routes
+v1Router.use('/meals', mealsRouter);

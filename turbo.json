@@ -21,6 +21,10 @@
     "db:push": {
       "cache": false
     },
+    "db:studio": {
+      "cache": false,
+      "persistent": true
+    },
     "db:check": {
       "cache": false
     }
