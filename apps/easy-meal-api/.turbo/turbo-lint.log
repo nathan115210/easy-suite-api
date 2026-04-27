@@ -1,0 +1,5 @@
+
+
+> easy-meal-api@ lint /Users/hongyuzhao/dev/easy-suite-api/apps/easy-meal-api
+> eslint "src/**/*.ts" "tests/**/*.ts" --no-error-on-unmatched-pattern
+
