@@ -13,6 +13,8 @@
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
+    "dev:app": "node scripts/dev-app.mjs",
+    "dev:api": "node scripts/dev-api.mjs",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

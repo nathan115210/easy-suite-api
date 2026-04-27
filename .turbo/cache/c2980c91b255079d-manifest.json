@@ -1,0 +1,11 @@
+{
+  "files": {
+    "apps/easy-meal-api/.turbo/turbo-typecheck.log": {
+      "size": 124,
+      "mtime_nanos": 1777284909915718066,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["apps/easy-meal-api/.turbo/turbo-typecheck.log"]
+}

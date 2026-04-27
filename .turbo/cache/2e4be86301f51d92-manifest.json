@@ -1,0 +1,11 @@
+{
+  "files": {
+    "apps/easy-meal-api/.turbo/turbo-test.log": {
+      "size": 3209,
+      "mtime_nanos": 1777284911012565933,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["apps/easy-meal-api/.turbo/turbo-test.log"]
+}
