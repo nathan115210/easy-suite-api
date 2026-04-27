@@ -1,1 +1,2 @@
+pnpm git:check-branch
 pnpm lint-staged

@@ -18,7 +18,9 @@ The GitHub Actions workflow lives at:
 The workflow runs on:
 
 - Pull requests
-- Pushes to `main`
+- Pushes to `feat/**`, `fix/**`, and `chore/**` branches
+
+Pull request jobs are skipped unless the source branch starts with `feat/`, `fix/`, or `chore/`.
 
 Current job:
 

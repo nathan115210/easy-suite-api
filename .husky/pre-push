@@ -1,3 +1,4 @@
+pnpm git:check-branch
 pnpm lint
 pnpm typecheck
 pnpm test
