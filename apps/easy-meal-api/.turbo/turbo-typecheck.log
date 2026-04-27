@@ -1,5 +1,0 @@
-
-
-> easy-meal-api@ typecheck /Users/hongyuzhao/dev/easy-suite-api/apps/easy-meal-api
-> tsc -p tsconfig.json --noEmit
-

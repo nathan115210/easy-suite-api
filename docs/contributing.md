@@ -84,6 +84,12 @@ pnpm typecheck
 pnpm test
 ```
 
+To test the GitHub Actions base workflow locally with Docker, run:
+
+```bash
+pnpm ci:local
+```
+
 If your change touches database schema, also run the relevant Drizzle command:
 
 ```bash

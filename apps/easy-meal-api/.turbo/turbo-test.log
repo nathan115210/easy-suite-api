@@ -1,38 +1,0 @@
-
-
-> easy-meal-api@ test /Users/hongyuzhao/dev/easy-suite-api/apps/easy-meal-api
-> NODE_OPTIONS=--experimental-vm-modules jest
-
-(node:55648) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
-(Use `node --trace-warnings ...` to show where the warning was created)
-[1m[2mDetermining test suites to run...[22m[22m[999D[K
-[?2026h[K[1A
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[?2026l[K[1A[K[1A(node:55648) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
-
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[?2026h[K[1A[K[1A
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[?2026l[K[1A[K[1A{"level":30,"time":1777284910892,"pid":55648,"hostname":"mac.lan","req":{"id":1,"method":"GET","url":"/v1/health","query":{},"params":{},"headers":{"host":"127.0.0.1:50787","accept-encoding":"gzip, deflate","connection":"close"},"remoteAddress":"::ffff:127.0.0.1","remotePort":50788},"res":{"statusCode":200,"headers":{"content-security-policy":"default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests","cross-origin-opener-policy":"same-origin","cross-origin-resource-policy":"same-origin","origin-agent-cluster":"?1","referrer-policy":"no-referrer","strict-transport-security":"max-age=31536000; includeSubDomains","x-content-type-options":"nosniff","x-dns-prefetch-control":"off","x-download-options":"noopen","x-frame-options":"SAMEORIGIN","x-permitted-cross-domain-policies":"none","x-xss-protection":"0","access-control-allow-origin":"*","content-type":"application/json; charset=utf-8","content-length":"50","etag":"W/\"32-bFCPwV776B74N04gW/14CmttCgs\""}},"responseTime":3,"msg":"request completed"}
-
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[?2026h[K[1A[K[1A
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[?2026l[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[K[1A[K[1A  GET /v1/health
-
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[K[1A[K[1A    [32m✓[39m [2mreturns health status (11 ms)[22m
-
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[K[1A[K[1A
-
-[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2mtests/integration/[22m[1mhealth.test.ts[22m
-[?2026h[K[1A[K[1A[?2026l[999D[K[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 total
-[1mTests:       [22m[1m[32m1 passed[39m[22m, 1 total
-[1mSnapshots:   [22m0 total
-[1mTime:[22m        0.256 s
-[2mRan all test suites[22m[2m.[22m
-[?2026h[?2026l
