@@ -1,6 +1,29 @@
-node_modules
+node_modules/
+
+# Environment files
 .env
-dist
-coverage
+.env.*
+!.env.example
+
+# Local GitHub Actions / act inputs
+.secrets
+.vars
+.input
+
+# Build and test output
+dist/
+build/
+coverage/
+
+# Tool caches and generated logs
+.turbo/
+**/.turbo/
+.cache/
+
+# Accidental zero-byte setup artifacts
+/docker
+/easy-suite-api@
+
+# Local editor and OS files
 .DS_Store
 .claude/
