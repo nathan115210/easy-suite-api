@@ -1,5 +1,5 @@
 import { index, pgEnum, pgTable, primaryKey, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { meals } from './meals.table';
+import { mealsTable } from './meals.table';
 
 export const mealTypeEnum = pgEnum('meal_type', [
   'breakfast',
@@ -15,7 +15,7 @@ export const mealMealTypes = pgTable(
   {
     mealId: uuid('meal_id')
       .notNull()
-      .references(() => meals.id, { onDelete: 'cascade' }),
+      .references(() => mealsTable.id, { onDelete: 'cascade' }),
 
     mealType: mealTypeEnum('meal_type').notNull(),
 

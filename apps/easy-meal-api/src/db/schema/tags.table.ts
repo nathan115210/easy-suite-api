@@ -1,5 +1,5 @@
 import { index, pgTable, primaryKey, timestamp, uuid, varchar, integer } from 'drizzle-orm/pg-core';
-import { meals } from './meals.table';
+import { mealsTable } from './meals.table';
 
 export const tags = pgTable(
   'tags',
@@ -19,7 +19,7 @@ export const mealTags = pgTable(
   {
     mealId: uuid('meal_id')
       .notNull()
-      .references(() => meals.id, { onDelete: 'cascade' }),
+      .references(() => mealsTable.id, { onDelete: 'cascade' }),
 
     tagId: uuid('tag_id')
       .notNull()

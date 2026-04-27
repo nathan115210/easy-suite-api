@@ -6,7 +6,7 @@ import { mealIngredients } from './meal-ingredients.table';
 import { mealInstructions } from './meal-instructions.table';
 import { mealMealTypes } from './meal-types.table';
 import { mealNutrition } from './meal-nutrition.table';
-import { meals } from './meals.table';
+import { mealsTable } from './meals.table';
 import { mealTags, tags as tagsTable } from './tags.table';
 
 export type SeedMealsResult = {
@@ -825,7 +825,7 @@ const mealsSeedData: Meal[] = [
 
 export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult> {
   return database.transaction(async (tx) => {
-    const existingMeals = await tx.select({ slug: meals.slug }).from(meals);
+    const existingMeals = await tx.select({ slug: mealsTable.slug }).from(mealsTable);
     const existingMealSlugs = new Set(existingMeals.map((meal) => meal.slug));
     let inserted = 0;
     let skipped = 0;
@@ -837,7 +837,7 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
       }
 
       const [createdMeal] = await tx
-        .insert(meals)
+        .insert(mealsTable)
         .values({
           title: meal.title,
           slug: meal.slug,
@@ -846,7 +846,7 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
           cookTime: meal.cookTime,
           difficulty: toSeedDifficulty(meal.difficulty),
         })
-        .returning({ id: meals.id });
+        .returning({ id: mealsTable.id });
 
       if (!createdMeal) {
         throw new Error(`Failed to seed meal: ${meal.slug}`);

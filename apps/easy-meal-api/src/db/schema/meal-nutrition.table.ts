@@ -1,10 +1,10 @@
 import { integer, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { meals } from './meals.table';
+import { mealsTable } from './meals.table';
 
 export const mealNutrition = pgTable('meal_nutrition', {
   mealId: uuid('meal_id')
     .primaryKey()
-    .references(() => meals.id, { onDelete: 'cascade' }),
+    .references(() => mealsTable.id, { onDelete: 'cascade' }),
 
   /**
    * Per serving.

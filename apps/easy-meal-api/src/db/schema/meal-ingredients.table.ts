@@ -1,5 +1,5 @@
 import { index, integer, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { meals } from './meals.table';
+import { mealsTable } from './meals.table';
 
 export const mealIngredients = pgTable(
   'meal_ingredients',
@@ -7,7 +7,7 @@ export const mealIngredients = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     mealId: uuid('meal_id')
       .notNull()
-      .references(() => meals.id, { onDelete: 'cascade' }),
+      .references(() => mealsTable.id, { onDelete: 'cascade' }),
     text: text('text').notNull(),
     amount: varchar('amount', { length: 120 }).notNull(),
 

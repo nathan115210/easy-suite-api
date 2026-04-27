@@ -10,7 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 export const difficultyLevelEnum = pgEnum('difficulty_level', ['easy', 'medium', 'hard']);
-export const meals = pgTable(
+export const mealsTable = pgTable(
   'meals',
   {
     id: uuid('id').primaryKey().defaultRandom(),
