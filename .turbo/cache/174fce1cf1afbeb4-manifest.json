@@ -1,0 +1,11 @@
+{
+  "files": {
+    "apps/easy-meal-api/.turbo/turbo-lint.log": {
+      "size": 158,
+      "mtime_nanos": 1777283484794027469,
+      "mode": 420,
+      "is_dir": false
+    }
+  },
+  "order": ["apps/easy-meal-api/.turbo/turbo-lint.log"]
+}

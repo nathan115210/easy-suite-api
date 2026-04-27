@@ -14,6 +14,7 @@
     "db:check": "drizzle-kit check"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@easy-suite/utils": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -22,6 +23,7 @@
     "helmet": "^8.1.0",
     "pg": "^8.20.0",
     "pino-http": "^11.0.0",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -31,6 +33,7 @@
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "drizzle-kit": "^0.31.10",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",

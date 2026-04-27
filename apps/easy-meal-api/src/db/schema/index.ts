@@ -1,1 +1,1 @@
-// Removed authors export as requested.
+export {};
