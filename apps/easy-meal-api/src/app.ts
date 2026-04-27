@@ -3,14 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import { logger } from '@easy-suite/utils';
-import { v1Router } from './v1/router.js';
-import { errorHandler } from './middlewares/error-handler.js';
-import { registerSwaggerDocs } from './openapi/swagger.js';
+import { v1Router } from './v1/router';
+import { errorHandler } from './middlewares/error-handler';
+import { registerSwaggerDocs } from './openapi/swagger';
 
 export const app = express();
 
 app.use(
-  pinoHttp.default({
+  pinoHttp({
     logger,
   }),
 );

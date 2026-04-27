@@ -27,3 +27,6 @@ coverage/
 # Local editor and OS files
 .DS_Store
 .claude/
+
+# IDE and editor config files
+.vscode/
