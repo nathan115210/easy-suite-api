@@ -14,6 +14,7 @@ import {
 
 const mockGetAllMeals = getAllMeals as jest.Mock;
 const mockGetMealById = getMealById as jest.Mock;
+type GetAllMealsRequest = Parameters<typeof getAllMealsController>[0];
 
 const mockMeal: Meal = {
   id: '550e8400-e29b-41d4-a716-446655440000',
@@ -43,7 +44,7 @@ beforeEach(() => {
 describe('getAllMealsController', () => {
   it('returns 200 with the meals array', async () => {
     mockGetAllMeals.mockResolvedValue([mockMeal]);
-    const req = {} as Request;
+    const req = { query: {} } as GetAllMealsRequest;
     const res = makeRes();
     const next = makeNext();
 
@@ -56,7 +57,7 @@ describe('getAllMealsController', () => {
 
   it('returns 200 with an empty array when there are no meals', async () => {
     mockGetAllMeals.mockResolvedValue([]);
-    const req = {} as Request;
+    const req = { query: {} } as GetAllMealsRequest;
     const res = makeRes();
     const next = makeNext();
 
@@ -66,10 +67,22 @@ describe('getAllMealsController', () => {
     expect(res.json).toHaveBeenCalledWith({ data: [] });
   });
 
+  it('passes search and filter query params to the service', async () => {
+    mockGetAllMeals.mockResolvedValue([mockMeal]);
+    const query = { q: 'spaghetti', difficulty: 'medium', cookTime: 'under_30' };
+    const req = { query } as unknown as GetAllMealsRequest;
+    const res = makeRes();
+    const next = makeNext();
+
+    await getAllMealsController(req, res, next);
+
+    expect(mockGetAllMeals).toHaveBeenCalledWith(query);
+  });
+
   it('calls next() with the error when the service throws', async () => {
     const error = new Error('DB connection failed');
     mockGetAllMeals.mockRejectedValue(error);
-    const req = {} as Request;
+    const req = { query: {} } as GetAllMealsRequest;
     const res = makeRes();
     const next = makeNext();
 

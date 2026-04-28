@@ -10,8 +10,8 @@ export const mealTypeEnum = pgEnum('meal_type', [
   'drinks',
 ]);
 
-export const mealMealTypes = pgTable(
-  'meal_meal_types',
+export const mealTypesTable = pgTable(
+  'meal_types',
   {
     mealId: uuid('meal_id')
       .notNull()
@@ -25,7 +25,7 @@ export const mealMealTypes = pgTable(
     primaryKey({
       columns: [table.mealId, table.mealType],
     }),
-    index('meal_meal_types_meal_id_idx').on(table.mealId),
-    index('meal_meal_types_type_idx').on(table.mealType),
+    index('meal_types_meal_id_idx').on(table.mealId),
+    index('meal_types_type_idx').on(table.mealType),
   ],
 );

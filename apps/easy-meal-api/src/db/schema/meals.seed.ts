@@ -4,7 +4,7 @@ import { DifficultyLevel as DifficultyLevelValue, MealType } from '../../../easy
 import type { db } from '../index';
 import { mealIngredients } from './meal-ingredients.table';
 import { mealInstructions } from './meal-instructions.table';
-import { mealMealTypes } from './meal-types.table';
+import { mealTypesTable } from './meal-types.table';
 import { mealNutrition } from './meal-nutrition.table';
 import { mealsTable } from './meals.table';
 import { mealTags, tags as tagsTable } from './tags.table';
@@ -884,9 +884,13 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
         );
       }
 
-      if (meal.mealType && meal.mealType.length > 0) {
-        await tx.insert(mealMealTypes).values(
-          meal.mealType.map((mealType) => ({
+      const seedMealTypes = [...new Set(meal.mealType ?? [])].filter(
+        (mealType) => mealType !== MealType.Any,
+      );
+
+      if (seedMealTypes.length > 0) {
+        await tx.insert(mealTypesTable).values(
+          seedMealTypes.map((mealType) => ({
             mealId: createdMeal.id,
             mealType,
           })),

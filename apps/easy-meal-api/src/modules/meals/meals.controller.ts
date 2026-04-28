@@ -1,15 +1,15 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ApiSuccess, ApiError } from '@easy-suite/utils';
-import { getAllMeals, getMealById } from './meals.service';
+import { getAllMeals, getMealById, type MealSearchQuery } from './meals.service';
 import type { Meal } from './meals.schema';
 
 export async function getAllMealsController(
-  _req: Request,
+  req: Request<Record<string, never>, ApiSuccess<Meal[]>, never, MealSearchQuery>,
   res: Response<ApiSuccess<Meal[]>>,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const data = await getAllMeals();
+    const data = await getAllMeals(req.query);
     res.status(200).json({ data });
   } catch (err) {
     next(err);

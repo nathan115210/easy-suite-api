@@ -19,11 +19,30 @@ export const MealSchema = registry.register(
 
 export type Meal = z.infer<typeof MealSchema>;
 
+export const MealSearchQuerySchema = z.object({
+  q: z.string().optional().openapi({ description: 'Search keyword matched against meal titles' }),
+  difficulty: z
+    .enum(['any', 'easy', 'medium', 'hard'])
+    .optional()
+    .openapi({ description: 'Filter by meal difficulty' }),
+  cookTime: z
+    .enum(['any', 'under_15', 'under_30', 'under_45', 'under_60', 'over_60'])
+    .optional()
+    .openapi({ description: 'Filter by cook time bucket' }),
+  sort: z
+    .enum(['created_desc', 'created_asc', 'cook_time_asc', 'cook_time_desc'])
+    .optional()
+    .openapi({ description: 'Sort order for meal results' }),
+});
+
 registry.registerPath({
   method: 'get',
   path: '/v1/meals',
   summary: 'List all meals',
   tags: ['Meals'],
+  request: {
+    query: MealSearchQuerySchema,
+  },
   responses: {
     200: {
       description: 'A list of meals',
