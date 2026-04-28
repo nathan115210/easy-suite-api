@@ -1,5 +1,5 @@
 import type { Meal } from '../../../src/modules/meals/meals.schema';
-import { CookTimeValue, DifficultyLevel } from '../../../easy-meal-api.types';
+import { CookTimeValue, DifficultyLevel, MealType } from '../../../easy-meal-api.types';
 
 jest.mock('../../../src/db/index', () => ({
   db: { select: jest.fn() },
@@ -13,10 +13,12 @@ const mockSelect = db.select as jest.Mock;
 let lastBuilder: ReturnType<typeof makeQueryBuilder>;
 
 function makeQueryBuilder(rows: unknown[]) {
-  // Mimics Drizzle's thenable builder: supports .from().where().limit().orderBy().then()
+  // Mimics Drizzle's thenable builder: supports the chain used by meals.service.
   const builder = {
     $dynamic: jest.fn(),
     from: jest.fn(),
+    leftJoin: jest.fn(),
+    groupBy: jest.fn(),
     where: jest.fn(),
     limit: jest.fn(),
     orderBy: jest.fn(),
@@ -29,6 +31,8 @@ function makeQueryBuilder(rows: unknown[]) {
   };
   builder.$dynamic.mockReturnValue(builder);
   builder.from.mockReturnValue(builder);
+  builder.leftJoin.mockReturnValue(builder);
+  builder.groupBy.mockReturnValue(builder);
   builder.where.mockReturnValue(builder);
   builder.limit.mockReturnValue(builder);
   builder.orderBy.mockReturnValue(builder);
@@ -44,6 +48,7 @@ const mockMeal: Meal = {
   description: 'A classic Italian pasta dish',
   cookTime: 30,
   difficulty: 'medium',
+  mealType: [MealType.Dinner],
 };
 
 beforeEach(() => {
@@ -77,6 +82,25 @@ describe('getAllMeals', () => {
     expect(selectedFields).toHaveProperty('description');
     expect(selectedFields).toHaveProperty('cookTime');
     expect(selectedFields).toHaveProperty('difficulty');
+    expect(selectedFields).toHaveProperty('mealType');
+  });
+
+  it('joins and groups meal types', async () => {
+    mockSelect.mockReturnValue(makeQueryBuilder([mockMeal]));
+
+    await getAllMeals();
+
+    expect(lastBuilder.leftJoin).toHaveBeenCalledTimes(1);
+    expect(lastBuilder.groupBy).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a meal with null mealType when no meal types exist', async () => {
+    const mealWithoutTypes: Meal = { ...mockMeal, mealType: null };
+    mockSelect.mockReturnValue(makeQueryBuilder([mealWithoutTypes]));
+
+    const result = await getAllMeals();
+
+    expect(result).toEqual([mealWithoutTypes]);
   });
 
   it('applies keyword, difficulty, and cook time filters together', async () => {
@@ -127,7 +151,12 @@ describe('getMealById', () => {
   });
 
   it('returns a meal with nullable fields set to null', async () => {
-    const mealWithNulls: Meal = { ...mockMeal, cookTime: null, difficulty: null };
+    const mealWithNulls: Meal = {
+      ...mockMeal,
+      cookTime: null,
+      difficulty: null,
+      mealType: null,
+    };
     mockSelect.mockReturnValue(makeQueryBuilder([mealWithNulls]));
     const result = await getMealById(mockMeal.id);
     expect(result).toEqual(mealWithNulls);

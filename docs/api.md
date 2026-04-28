@@ -46,6 +46,25 @@ Example:
 GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
 ```
 
+Meal responses include `mealType` as a JSON array or `null`:
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Simple Tomato Pasta",
+      "slug": "simple-tomato-pasta",
+      "image": "https://example.com/image.jpg",
+      "description": "Quick pasta with tomato sauce.",
+      "cookTime": 20,
+      "difficulty": "easy",
+      "mealType": ["dinner"]
+    }
+  ]
+}
+```
+
 ```http
 GET /v1/meals/{id}
 ```

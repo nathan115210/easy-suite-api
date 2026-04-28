@@ -37,11 +37,14 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
       "image": "string",
       "description": "string",
       "cookTime": 30,
-      "difficulty": "easy | medium | hard"
+      "difficulty": "easy | medium | hard",
+      "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"]
     }
   ]
 }
 ```
+
+`mealType` is returned as a JSON array when assigned, for example `["dinner"]`. It is `null` when no meal types are assigned.
 
 ---
 
@@ -66,7 +69,8 @@ Returns a single meal by UUID.
     "image": "string",
     "description": "string",
     "cookTime": 30,
-    "difficulty": "easy | medium | hard"
+    "difficulty": "easy | medium | hard",
+    "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"]
   }
 }
 ```

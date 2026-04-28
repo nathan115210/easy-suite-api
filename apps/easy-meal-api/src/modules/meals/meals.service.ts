@@ -1,9 +1,11 @@
-import { CookTimeValue, DifficultyLevel } from '../../../easy-meal-api.types';
+import { CookTimeValue, DifficultyLevel, MealType } from '../../../easy-meal-api.types';
 import { db } from '../../db';
-import { mealsTable } from '../../db/schema';
+import { mealsTable, mealTypesTable } from '../../db/schema';
 import { searchByKeywordCondition } from '../../utils/searchByKeyword';
 import type { Meal } from './meals.schema';
-import { and, asc, desc, eq, gt, lte, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, lte, sql, type SQL } from 'drizzle-orm';
+
+type MealTypeResponse = Exclude<MealType, MealType.Any>;
 
 export type MealSearchQuerySortOption =
   | 'created_desc'
@@ -64,8 +66,23 @@ export async function getAllMeals(query: MealSearchQuery = {}): Promise<Meal[]> 
       description: mealsTable.description,
       cookTime: mealsTable.cookTime,
       difficulty: mealsTable.difficulty,
+      mealType: sql<MealTypeResponse[] | null>`
+        json_agg(${mealTypesTable.mealType})
+          filter (where ${mealTypesTable.mealType} is not null)
+      `,
     })
     .from(mealsTable)
+    .leftJoin(mealTypesTable, eq(mealTypesTable.mealId, mealsTable.id))
+    .groupBy(
+      mealsTable.id,
+      mealsTable.title,
+      mealsTable.slug,
+      mealsTable.image,
+      mealsTable.description,
+      mealsTable.cookTime,
+      mealsTable.difficulty,
+      mealsTable.createdAt,
+    )
     .$dynamic();
 
   const whereClause = filters.length === 1 ? filters[0] : and(...filters);
@@ -87,9 +104,23 @@ export async function getMealById(id: string): Promise<Meal | null> {
       description: mealsTable.description,
       cookTime: mealsTable.cookTime,
       difficulty: mealsTable.difficulty,
+      mealType: sql<MealTypeResponse[] | null>`
+        json_agg(${mealTypesTable.mealType})
+          filter (where ${mealTypesTable.mealType} is not null)
+      `,
     })
     .from(mealsTable)
+    .leftJoin(mealTypesTable, eq(mealTypesTable.mealId, mealsTable.id))
     .where(eq(mealsTable.id, id))
+    .groupBy(
+      mealsTable.id,
+      mealsTable.title,
+      mealsTable.slug,
+      mealsTable.image,
+      mealsTable.description,
+      mealsTable.cookTime,
+      mealsTable.difficulty,
+    )
     .limit(1)
     .then(([meal]) => meal ?? null);
 }

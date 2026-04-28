@@ -1,5 +1,15 @@
 import { z } from 'zod';
 import { registry } from '../../openapi/registry';
+import { MealType } from '../../../easy-meal-api.types';
+
+const MealTypeResponseSchema = z.enum([
+  MealType.Breakfast,
+  MealType.Lunch,
+  MealType.Dinner,
+  MealType.Snacks,
+  MealType.Dessert,
+  MealType.Drinks,
+]);
 
 export const MealSchema = registry.register(
   'Meal',
@@ -14,6 +24,10 @@ export const MealSchema = registry.register(
       .enum(['easy', 'medium', 'hard'])
       .nullable()
       .openapi({ description: 'Difficulty level' }),
+    mealType: z
+      .array(MealTypeResponseSchema)
+      .nullable()
+      .openapi({ description: 'Meal categories, or null when no meal types are assigned' }),
   }),
 );
 

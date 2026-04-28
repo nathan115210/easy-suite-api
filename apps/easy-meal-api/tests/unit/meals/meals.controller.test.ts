@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Meal } from '../../../src/modules/meals/meals.schema';
+import { MealType } from '../../../easy-meal-api.types';
 
 jest.mock('../../../src/modules/meals/meals.service', () => ({
   getAllMeals: jest.fn(),
@@ -24,6 +25,7 @@ const mockMeal: Meal = {
   description: 'A classic Italian pasta dish',
   cookTime: 30,
   difficulty: 'medium',
+  mealType: [MealType.Dinner],
 };
 
 function makeRes() {
