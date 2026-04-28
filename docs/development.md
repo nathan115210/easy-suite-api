@@ -89,7 +89,31 @@ Default local URLs:
 
 - API base: `http://localhost:8282`
 - Health: `http://localhost:8282/v1/health`
+- Meals: `http://localhost:8282/v1/meals`
 - Swagger UI: `http://localhost:8282/docs`
+
+## Try Meals Search Locally
+
+After the API and database are running, seed the local meal data if needed:
+
+```bash
+pnpm --filter easy-meal-api db:seed
+```
+
+Then call the meals endpoint with optional search and filter query params:
+
+```bash
+curl "http://localhost:8282/v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc"
+```
+
+Supported query params:
+
+| Parameter    | Values                                                           |
+| ------------ | ---------------------------------------------------------------- |
+| `q`          | Search text matched against meal titles                          |
+| `difficulty` | `any`, `easy`, `medium`, `hard`                                  |
+| `cookTime`   | `any`, `under_15`, `under_30`, `under_45`, `under_60`, `over_60` |
+| `sort`       | `created_desc`, `created_asc`, `cook_time_asc`, `cook_time_desc` |
 
 ## Package Scripts
 

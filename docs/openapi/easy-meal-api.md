@@ -8,7 +8,22 @@ Interactive docs are available at `http://localhost:8282/docs` when the API is r
 
 #### `GET /v1/meals`
 
-Returns all meals.
+Returns meals. Results can be searched by title, filtered by difficulty or cook time, and sorted.
+
+**Query parameters**
+
+| Parameter    | Type   | Values                                                           | Description                                  |
+| ------------ | ------ | ---------------------------------------------------------------- | -------------------------------------------- |
+| `q`          | string | Any search text                                                  | Full-text search against meal titles         |
+| `difficulty` | string | `any`, `easy`, `medium`, `hard`                                  | Filter by difficulty; `any` skips the filter |
+| `cookTime`   | string | `any`, `under_15`, `under_30`, `under_45`, `under_60`, `over_60` | Filter by cook time bucket                   |
+| `sort`       | string | `created_desc`, `created_asc`, `cook_time_asc`, `cook_time_desc` | Sort returned meals                          |
+
+Example:
+
+```http
+GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
+```
 
 **Response `200`**
 

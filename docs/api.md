@@ -25,6 +25,31 @@ Response:
 }
 ```
 
+## Meals
+
+```http
+GET /v1/meals
+```
+
+Optional query params:
+
+| Parameter    | Values                                                           |
+| ------------ | ---------------------------------------------------------------- |
+| `q`          | Search text matched against meal titles                          |
+| `difficulty` | `any`, `easy`, `medium`, `hard`                                  |
+| `cookTime`   | `any`, `under_15`, `under_30`, `under_45`, `under_60`, `over_60` |
+| `sort`       | `created_desc`, `created_asc`, `cook_time_asc`, `cook_time_desc` |
+
+Example:
+
+```http
+GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
+```
+
+```http
+GET /v1/meals/{id}
+```
+
 ## OpenAPI Foundation
 
 OpenAPI document generation lives in:
