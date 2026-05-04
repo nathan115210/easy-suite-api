@@ -2,6 +2,7 @@ import { inArray } from 'drizzle-orm';
 import type { DifficultyLevel, Meal } from '../../../easy-meal-api.types';
 import { DifficultyLevel as DifficultyLevelValue, MealType } from '../../../easy-meal-api.types';
 import type { db } from '../index';
+import { slugify } from '../../utils/slugify';
 import { mealIngredientsTable } from './meal-ingredients.table';
 import { mealInstructionsTable } from './meal-instructions.table';
 import { mealTypesTable } from './meal-types.table';
@@ -956,14 +957,6 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
       skipped,
     };
   });
-}
-
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 function toSeedDifficulty(difficulty: DifficultyLevel | undefined) {

@@ -4,18 +4,21 @@ import {
   mealIngredientsTable,
   mealInstructionsTable,
   mealNutritionTable,
+  mealTypesTable,
   mealsTable,
 } from '../../../src/db/schema';
+import { AppError } from '@easy-suite/utils';
 
 jest.mock('../../../src/db/index', () => ({
-  db: { select: jest.fn() },
+  db: { select: jest.fn(), transaction: jest.fn() },
   pool: {},
 }));
 
 import { db } from '../../../src/db/index';
-import { getAllMeals, getMealById } from '../../../src/modules/meals/meals.service';
+import { getAllMeals, getMealById, updateMeal } from '../../../src/modules/meals/meals.service';
 
 const mockSelect = db.select as jest.Mock;
+const mockTransaction = db.transaction as unknown as jest.Mock;
 let builders: ReturnType<typeof makeQueryBuilder>[];
 
 function queueSelectResults(...resultSets: unknown[][]) {
@@ -66,8 +69,18 @@ const mockMeal: Meal = {
   mealType: [MealType.Dinner],
 };
 
+function makeTx() {
+  const set = jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue([]) });
+  const update = jest.fn().mockReturnValue({ set });
+  const del = jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue([]) });
+  const values = jest.fn().mockResolvedValue([]);
+  const insert = jest.fn().mockReturnValue({ values });
+  return { update, set, delete: del, insert };
+}
+
 beforeEach(() => {
   mockSelect.mockReset();
+  mockTransaction.mockReset();
   builders = [];
 });
 
@@ -350,5 +363,136 @@ describe('getMealById', () => {
         nutrition: null,
       }),
     );
+  });
+});
+
+describe('updateMeal', () => {
+  it('throws DUPLICATE_SORT_ORDER before any DB call when ingredients have duplicate sort_orders', async () => {
+    await expect(
+      updateMeal(mockMeal.id, {
+        ingredients: [
+          { text: 'Pasta', sort_order: 1 },
+          { text: 'Sauce', sort_order: 1 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: 'DUPLICATE_SORT_ORDER',
+      message: 'Duplicate sort_order values in ingredients: 1',
+    });
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('throws DUPLICATE_SORT_ORDER before any DB call when instructions have duplicate sort_orders', async () => {
+    await expect(
+      updateMeal(mockMeal.id, {
+        instructions: [
+          { text: 'Step A', sort_order: 0 },
+          { text: 'Step B', sort_order: 0 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: 'DUPLICATE_SORT_ORDER',
+      message: 'Duplicate sort_order values in instructions: 0',
+    });
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('includes all duplicate sort_order values in the error message', async () => {
+    await expect(
+      updateMeal(mockMeal.id, {
+        ingredients: [
+          { text: 'A', sort_order: 1 },
+          { text: 'B', sort_order: 1 },
+          { text: 'C', sort_order: 3 },
+          { text: 'D', sort_order: 3 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: 'DUPLICATE_SORT_ORDER',
+      message: 'Duplicate sort_order values in ingredients: 1, 3',
+    });
+  });
+
+  it('returns null when the meal does not exist', async () => {
+    queueSelectResults([]);
+    const result = await updateMeal(mockMeal.id, { title: 'New Title' });
+    expect(result).toBeNull();
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('derives slug from title when title is provided', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+
+    await updateMeal(mockMeal.id, { title: 'New Meal Title' });
+
+    expect(tx.set).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'New Meal Title', slug: 'new-meal-title' }),
+    );
+  });
+
+  it('does not call tx.update when no scalar fields are provided', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+
+    await updateMeal(mockMeal.id, { mealType: [MealType.Dinner] });
+
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it('skips mealType replacement when mealType is not provided', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+
+    await updateMeal(mockMeal.id, { title: 'Updated Title' });
+
+    const deletedTables = tx.delete.mock.calls.map(([table]: [unknown]) => table);
+    expect(deletedTables).not.toContain(mealTypesTable);
+  });
+
+  it('replaces mealType rows when mealType is provided', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+
+    await updateMeal(mockMeal.id, { mealType: [MealType.Breakfast, MealType.Lunch] });
+
+    const deletedTables = tx.delete.mock.calls.map(([table]: [unknown]) => table);
+    expect(deletedTables).toContain(mealTypesTable);
+    expect(tx.insert).toHaveBeenCalledWith(mealTypesTable);
+  });
+
+  it('returns the updated meal after a successful update', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+
+    const result = await updateMeal(mockMeal.id, { title: mockMeal.title });
+
+    expect(result).toEqual({ ...mockMeal, ingredients: null, instructions: null, nutrition: null });
+  });
+
+  it('throws AppError with statusCode 400 for duplicate sort_orders', async () => {
+    await expect(
+      updateMeal(mockMeal.id, {
+        ingredients: [
+          { text: 'A', sort_order: 2 },
+          { text: 'B', sort_order: 2 },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(AppError);
   });
 });

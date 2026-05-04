@@ -8,14 +8,17 @@ import {
   mealNutritionTable,
 } from '../../db/schema';
 import { searchByKeywordCondition } from '../../utils/searchByKeyword';
+import { slugify } from '../../utils/slugify';
 import type {
   Meal,
   MealDetail,
   MealIngredient,
   MealInstruction,
   MealNutrition,
+  UpdateMealBody,
 } from './meals.schema';
 import { and, asc, desc, eq, gt, lte, sql, type SQL } from 'drizzle-orm';
+import { AppError } from '@easy-suite/utils';
 
 type MealTypeResponse = Exclude<MealType, MealType.Any>;
 
@@ -171,6 +174,123 @@ async function getMealWithDetails(meal: Meal): Promise<MealDetail> {
     instructions: instructionsData,
     nutrition: nutritionData,
   };
+}
+
+function findDuplicateSortOrders(items: { sort_order: number }[]): number[] {
+  const seen = new Set<number>();
+  const duplicates = new Set<number>();
+  for (const item of items) {
+    if (seen.has(item.sort_order)) {
+      duplicates.add(item.sort_order);
+    } else {
+      seen.add(item.sort_order);
+    }
+  }
+  return [...duplicates].sort((a, b) => a - b);
+}
+
+export async function updateMeal(id: string, body: UpdateMealBody): Promise<MealDetail | null> {
+  if (body.ingredients) {
+    const dupes = findDuplicateSortOrders(body.ingredients);
+    if (dupes.length > 0) {
+      throw new AppError(
+        400,
+        'DUPLICATE_SORT_ORDER',
+        `Duplicate sort_order values in ingredients: ${dupes.join(', ')}`,
+      );
+    }
+  }
+
+  if (body.instructions) {
+    const dupes = findDuplicateSortOrders(body.instructions);
+    if (dupes.length > 0) {
+      throw new AppError(
+        400,
+        'DUPLICATE_SORT_ORDER',
+        `Duplicate sort_order values in instructions: ${dupes.join(', ')}`,
+      );
+    }
+  }
+
+  const existing = await db
+    .select({ id: mealsTable.id })
+    .from(mealsTable)
+    .where(eq(mealsTable.id, id))
+    .limit(1)
+    .then(([row]) => row);
+
+  if (!existing) return null;
+
+  await db.transaction(async (tx) => {
+    const mealFields: Partial<typeof mealsTable.$inferInsert> = {};
+    if (body.title !== undefined) {
+      mealFields.title = body.title;
+      mealFields.slug = slugify(body.title);
+    }
+    if (body.image !== undefined) mealFields.image = body.image;
+    if (body.description !== undefined) mealFields.description = body.description;
+    if (body.cookTime !== undefined) mealFields.cookTime = body.cookTime;
+    if (body.difficulty !== undefined) mealFields.difficulty = body.difficulty;
+
+    if (Object.keys(mealFields).length > 0) {
+      await tx
+        .update(mealsTable)
+        .set({ ...mealFields, updatedAt: new Date() })
+        .where(eq(mealsTable.id, id));
+    }
+
+    if (body.mealType !== undefined) {
+      await tx.delete(mealTypesTable).where(eq(mealTypesTable.mealId, id));
+      if (body.mealType && body.mealType.length > 0) {
+        await tx
+          .insert(mealTypesTable)
+          .values(body.mealType.map((type) => ({ mealId: id, mealType: type })));
+      }
+    }
+
+    if (body.ingredients !== undefined) {
+      await tx.delete(mealIngredientsTable).where(eq(mealIngredientsTable.mealId, id));
+      if (body.ingredients && body.ingredients.length > 0) {
+        await tx.insert(mealIngredientsTable).values(
+          body.ingredients.map((ing) => ({
+            mealId: id,
+            text: ing.text,
+            amount: ing.amount ?? '',
+            sortOrder: ing.sort_order,
+          })),
+        );
+      }
+    }
+
+    if (body.instructions !== undefined) {
+      await tx.delete(mealInstructionsTable).where(eq(mealInstructionsTable.mealId, id));
+      if (body.instructions && body.instructions.length > 0) {
+        await tx.insert(mealInstructionsTable).values(
+          body.instructions.map((inst) => ({
+            mealId: id,
+            text: inst.text,
+            image: inst.image ?? null,
+            sortOrder: inst.sort_order,
+          })),
+        );
+      }
+    }
+
+    if (body.nutrition !== undefined) {
+      await tx.delete(mealNutritionTable).where(eq(mealNutritionTable.mealId, id));
+      if (body.nutrition) {
+        await tx.insert(mealNutritionTable).values({
+          mealId: id,
+          calories: body.nutrition.calories,
+          protein: body.nutrition.protein ?? null,
+          carbs: body.nutrition.carbs ?? null,
+          fat: body.nutrition.fat ?? null,
+        });
+      }
+    }
+  });
+
+  return getMealById(id);
 }
 
 export async function getMealById(id: string): Promise<MealDetail | null> {

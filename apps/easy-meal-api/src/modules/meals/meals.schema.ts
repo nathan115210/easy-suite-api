@@ -89,6 +89,38 @@ export const MealDetailSchema = registry.register(
 
 export type MealDetail = z.infer<typeof MealDetailSchema>;
 
+export const UpdateMealBodySchema = z.object({
+  title: z.string().optional().openapi({ description: 'Display name of the meal' }),
+  image: z.string().optional().openapi({ description: 'Image URL' }),
+  description: z.string().optional().openapi({ description: 'Short description' }),
+  cookTime: z.number().int().nullable().optional().openapi({ description: 'Cook time in minutes' }),
+  difficulty: z
+    .enum(['easy', 'medium', 'hard'])
+    .nullable()
+    .optional()
+    .openapi({ description: 'Difficulty level' }),
+  mealType: z
+    .array(MealTypeResponseSchema)
+    .nullable()
+    .optional()
+    .openapi({ description: 'Meal categories' }),
+  ingredients: z
+    .array(MealIngredientSchema)
+    .nullable()
+    .optional()
+    .openapi({ description: 'Ingredient list' }),
+  instructions: z
+    .array(MealInstructionSchema)
+    .nullable()
+    .optional()
+    .openapi({ description: 'Preparation steps' }),
+  nutrition: MealNutritionSchema.nullable()
+    .optional()
+    .openapi({ description: 'Per-serving nutrition info' }),
+});
+
+export type UpdateMealBody = z.infer<typeof UpdateMealBodySchema>;
+
 export const MealSearchQuerySchema = z.object({
   q: z.string().optional().openapi({ description: 'Search keyword matched against meal titles' }),
   difficulty: z
@@ -158,6 +190,52 @@ registry.registerPath({
               code: z.literal('NOT_FOUND'),
               message: z.string(),
             }),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'put',
+  path: '/v1/meals/{id}',
+  summary: 'Replace a meal by ID',
+  tags: ['Meals'],
+  request: {
+    params: z.object({
+      id: z.string().uuid().openapi({ description: 'Meal UUID' }),
+    }),
+    body: {
+      required: true,
+      content: { 'application/json': { schema: UpdateMealBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: 'The updated meal',
+      content: { 'application/json': { schema: z.object({ data: MealDetailSchema }) } },
+    },
+    400: {
+      description: 'Invalid UUID or request body',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.string(),
+              message: z.string(),
+              details: z.unknown().optional(),
+            }),
+          }),
+        },
+      },
+    },
+    404: {
+      description: 'Meal not found',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({ code: z.literal('NOT_FOUND'), message: z.string() }),
           }),
         },
       },

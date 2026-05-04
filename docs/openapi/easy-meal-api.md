@@ -156,6 +156,70 @@ Returns a single meal by UUID.
 
 ---
 
+#### `PUT /v1/meals/{id}`
+
+Partially updates a meal by UUID. Only the fields included in the request body are changed. When `title` is updated, `slug` is automatically re-derived from the new title.
+
+**Path parameters**
+
+| Parameter | Type | Description     |
+| --------- | ---- | --------------- |
+| `id`      | UUID | Meal identifier |
+
+**Request body** _(all fields optional)_
+
+```json
+{
+  "title": "string",
+  "image": "string",
+  "description": "string",
+  "cookTime": 30,
+  "difficulty": "easy | medium | hard | null",
+  "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+  "ingredients": [{ "text": "string", "amount": "string", "sort_order": 0 }],
+  "instructions": [{ "text": "string", "image": "string | null", "sort_order": 0 }],
+  "nutrition": {
+    "calories": 500,
+    "protein": 30,
+    "carbs": 60,
+    "fat": 15
+  }
+}
+```
+
+- Omitting a field leaves that data unchanged.
+- Setting `mealType`, `ingredients`, `instructions`, or `nutrition` to `null` clears that related data.
+- `sort_order` values must be unique within `ingredients` and within `instructions`.
+
+**Response `200`**
+
+Returns the full updated `MealDetail` object (same shape as `GET /v1/meals/{id}`).
+
+**Response `400`** — invalid UUID or request body
+
+```json
+{
+  "error": {
+    "code": "INVALID_BODY | INVALID_ID | DUPLICATE_SORT_ORDER",
+    "message": "string",
+    "details": []
+  }
+}
+```
+
+**Response `404`** — meal not found
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Meal not found"
+  }
+}
+```
+
+---
+
 ## How it works
 
 OpenAPI paths are registered using `@asteasolutions/zod-to-openapi`. Each module owns its own path registrations.

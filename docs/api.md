@@ -144,6 +144,28 @@ Meal detail responses use the same enriched meal shape:
 
 Related `ingredients`, `instructions`, and `nutrition` are `null` when no data is available.
 
+```http
+PUT /v1/meals/{id}
+```
+
+Partially updates a meal. Only fields present in the request body are changed. When `title` is updated, `slug` is automatically re-derived. Relation fields (`mealType`, `ingredients`, `instructions`, `nutrition`) are fully replaced when provided, or left untouched when omitted.
+
+All request body fields are optional:
+
+| Field          | Type           | Notes                                        |
+| -------------- | -------------- | -------------------------------------------- |
+| `title`        | string         | Also auto-updates `slug`                     |
+| `image`        | string         |                                              |
+| `description`  | string         |                                              |
+| `cookTime`     | number \| null | Minutes                                      |
+| `difficulty`   | enum \| null   | `easy`, `medium`, `hard`                     |
+| `mealType`     | array \| null  | Replaces all meal type entries               |
+| `ingredients`  | array \| null  | `sort_order` must be unique within the array |
+| `instructions` | array \| null  | `sort_order` must be unique within the array |
+| `nutrition`    | object \| null |                                              |
+
+Returns the updated `MealDetail` on success (`200`), `404` if the meal does not exist, or `400` for validation errors (including `DUPLICATE_SORT_ORDER`).
+
 ## OpenAPI Foundation
 
 OpenAPI document generation lives in:
