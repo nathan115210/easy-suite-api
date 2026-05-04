@@ -51,8 +51,8 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
       "image": "string",
       "description": "string",
       "cookTime": 30,
-      "difficulty": "easy | medium | hard",
-      "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+      "difficulty": "easy",
+      "mealType": ["dinner"],
       "ingredients": [
         {
           "text": "string",
@@ -63,7 +63,7 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
       "instructions": [
         {
           "text": "string",
-          "image": "string | null",
+          "image": null,
           "sort_order": 0
         }
       ],
@@ -106,11 +106,11 @@ Creates a new meal. `slug` is automatically derived from `title`.
   "title": "string",
   "image": "string",
   "description": "string",
-  "difficulty": "easy | medium | hard | null",
+  "difficulty": "easy",
   "cookTime": 30,
-  "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+  "mealType": ["dinner"],
   "ingredients": [{ "text": "string", "amount": "string", "sort_order": 0 }],
-  "instructions": [{ "text": "string", "image": "string | null", "sort_order": 0 }],
+  "instructions": [{ "text": "string", "image": null, "sort_order": 0 }],
   "nutrition": {
     "calories": 500,
     "protein": 30,
@@ -172,8 +172,8 @@ Returns a single meal by UUID.
     "image": "string",
     "description": "string",
     "cookTime": 30,
-    "difficulty": "easy | medium | hard",
-    "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+    "difficulty": "easy",
+    "mealType": ["dinner"],
     "ingredients": [
       {
         "text": "string",
@@ -184,7 +184,7 @@ Returns a single meal by UUID.
     "instructions": [
       {
         "text": "string",
-        "image": "string | null",
+        "image": null,
         "sort_order": 0
       }
     ],
@@ -242,10 +242,10 @@ Partially updates a meal by UUID. Only the fields included in the request body a
   "image": "string",
   "description": "string",
   "cookTime": 30,
-  "difficulty": "easy | medium | hard | null",
-  "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+  "difficulty": "easy",
+  "mealType": ["dinner"],
   "ingredients": [{ "text": "string", "amount": "string", "sort_order": 0 }],
-  "instructions": [{ "text": "string", "image": "string | null", "sort_order": 0 }],
+  "instructions": [{ "text": "string", "image": null, "sort_order": 0 }],
   "nutrition": {
     "calories": 500,
     "protein": 30,

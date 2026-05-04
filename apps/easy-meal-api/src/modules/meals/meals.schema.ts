@@ -58,6 +58,36 @@ export const MealSchema = registry.register(
     slug: z.string().openapi({ description: 'URL-safe identifier' }),
     image: z.string().openapi({ description: 'Image URL' }),
     description: z.string().openapi({ description: 'Short description' }),
+    cookTime: z.number().int().nullable().openapi({ description: 'Cook time in minutes' }),
+    difficulty: z
+      .enum(['easy', 'medium', 'hard'])
+      .nullable()
+      .openapi({ description: 'Difficulty level' }),
+    mealType: z
+      .array(MealTypeResponseSchema)
+      .nullable()
+      .openapi({ description: 'Meal categories, or null when no meal types are assigned' }),
+    ingredients: z
+      .array(MealIngredientSchema)
+      .nullable()
+      .openapi({ description: 'Ingredients ordered by sort_order, or null when unavailable' }),
+    instructions: z.array(MealInstructionSchema).nullable().openapi({
+      description: 'Preparation instructions ordered by sort_order, or null when unavailable',
+    }),
+    nutrition: MealNutritionSchema.nullable().openapi({
+      description: 'Per-serving nutrition details, or null when unavailable',
+    }),
+  }),
+);
+
+export type Meal = z.infer<typeof MealSchema>;
+
+export const AddMealBodySchema = registry.register(
+  'AddMealBody',
+  z.object({
+    title: z.string().openapi({ description: 'Display name of the meal' }),
+    image: z.string().openapi({ description: 'Image URL' }),
+    description: z.string().openapi({ description: 'Short description' }),
     cookTime: z
       .number()
       .int()
@@ -72,48 +102,26 @@ export const MealSchema = registry.register(
       .array(MealTypeResponseSchema)
       .nullable()
       .optional()
-      .openapi({ description: 'Meal categories, or null when no meal types are assigned' }),
+      .openapi({ description: 'Meal categories' }),
     ingredients: z
       .array(MealIngredientSchema)
       .nullable()
       .optional()
-      .openapi({ description: 'Ingredients ordered by sort_order, or null when unavailable' }),
-    instructions: z.array(MealInstructionSchema).nullable().optional().openapi({
-      description: 'Preparation instructions ordered by sort_order, or null when unavailable',
-    }),
-    nutrition: MealNutritionSchema.nullable().optional().openapi({
-      description: 'Per-serving nutrition details, or null when unavailable',
-    }),
-  }),
-);
-
-export type Meal = z.infer<typeof MealSchema>;
-
-export const AddMealBodySchema = registry.register(
-  'AddMealBody',
-  MealSchema.omit({
-    id: true,
-    slug: true,
+      .openapi({ description: 'Ingredient list' }),
+    instructions: z
+      .array(MealInstructionSchema)
+      .nullable()
+      .optional()
+      .openapi({ description: 'Preparation steps' }),
+    nutrition: MealNutritionSchema.nullable()
+      .optional()
+      .openapi({ description: 'Per-serving nutrition info' }),
   }),
 );
 
 export type AddMealBody = z.infer<typeof AddMealBodySchema>;
 
-export const MealDetailSchema = registry.register(
-  'MealDetail',
-  MealSchema.extend({
-    ingredients: z
-      .array(MealIngredientSchema)
-      .nullable()
-      .openapi({ description: 'Ingredients ordered by sort_order, or null when unavailable' }),
-    instructions: z.array(MealInstructionSchema).nullable().openapi({
-      description: 'Preparation instructions ordered by sort_order, or null when unavailable',
-    }),
-    nutrition: MealNutritionSchema.nullable().openapi({
-      description: 'Per-serving nutrition details, or null when unavailable',
-    }),
-  }),
-);
+export const MealDetailSchema = registry.register('MealDetail', MealSchema);
 
 export type MealDetail = z.infer<typeof MealDetailSchema>;
 

@@ -74,6 +74,9 @@ const mockMeal: Meal = {
   cookTime: 30,
   difficulty: 'medium',
   mealType: [MealType.Dinner],
+  ingredients: null,
+  instructions: null,
+  nutrition: null,
 };
 
 function makeTx() {

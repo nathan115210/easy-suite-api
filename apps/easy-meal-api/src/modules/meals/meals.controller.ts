@@ -90,7 +90,6 @@ export async function addMealController(
   res: Response<ApiSuccess<MealDetail> | ApiError>,
   next: NextFunction,
 ): Promise<void> {
-  console.log('req.body', req.body);
   // Validation can be added here if needed, similar to the other controllers
   const parsed = AddMealBodySchema.safeParse(req.body);
 
@@ -106,7 +105,6 @@ export async function addMealController(
   }
   try {
     const data = await createMeal(parsed.data);
-    console.log('data', data);
     res.status(201).json({ data });
   } catch (err) {
     next(err);

@@ -217,7 +217,9 @@ async function getNutritionByMealId(mealId: string): Promise<MealNutrition | nul
 
 // Used only by getMealById (single-meal path). Not used by getAllMeals,
 // which batches all three lookups into one IN-query round-trip each.
-async function getMealWithDetails(meal: Meal): Promise<MealDetail> {
+async function getMealWithDetails(
+  meal: Omit<Meal, 'ingredients' | 'instructions' | 'nutrition'>,
+): Promise<MealDetail> {
   const [ingredientsData, instructionsData, nutritionData] = await Promise.all([
     getIngredientsByMealId(meal.id),
     getInstructionsByMealId(meal.id),
@@ -291,79 +293,90 @@ export async function updateMeal(id: string, body: UpdateMealBody): Promise<Meal
       throw new AppError(
         409,
         'MEAL_TITLE_ALREADY_EXISTS',
-        `A meal with the title "${body.title}" already exists.`,
+        `A meal already exists with the generated slug "${newSlug}" derived from the title "${body.title}".`,
       );
     }
   }
 
-  await db.transaction(async (tx) => {
-    const mealFields: Partial<typeof mealsTable.$inferInsert> = {};
-    if (body.title !== undefined) {
-      mealFields.title = body.title;
-      mealFields.slug = slugify(body.title);
-    }
-    if (body.image !== undefined) mealFields.image = body.image;
-    if (body.description !== undefined) mealFields.description = body.description;
-    if (body.cookTime !== undefined) mealFields.cookTime = body.cookTime;
-    if (body.difficulty !== undefined) mealFields.difficulty = body.difficulty;
+  try {
+    await db.transaction(async (tx) => {
+      const mealFields: Partial<typeof mealsTable.$inferInsert> = {};
+      if (body.title !== undefined) {
+        mealFields.title = body.title;
+        mealFields.slug = slugify(body.title);
+      }
+      if (body.image !== undefined) mealFields.image = body.image;
+      if (body.description !== undefined) mealFields.description = body.description;
+      if (body.cookTime !== undefined) mealFields.cookTime = body.cookTime;
+      if (body.difficulty !== undefined) mealFields.difficulty = body.difficulty;
 
-    if (Object.keys(mealFields).length > 0) {
-      await tx
-        .update(mealsTable)
-        .set({ ...mealFields, updatedAt: new Date() })
-        .where(eq(mealsTable.id, id));
-    }
-
-    if (body.mealType !== undefined) {
-      await tx.delete(mealTypesTable).where(eq(mealTypesTable.mealId, id));
-      if (body.mealType && body.mealType.length > 0) {
+      if (Object.keys(mealFields).length > 0) {
         await tx
-          .insert(mealTypesTable)
-          .values(body.mealType.map((type) => ({ mealId: id, mealType: type })));
+          .update(mealsTable)
+          .set({ ...mealFields, updatedAt: new Date() })
+          .where(eq(mealsTable.id, id));
       }
-    }
 
-    if (body.ingredients !== undefined) {
-      await tx.delete(mealIngredientsTable).where(eq(mealIngredientsTable.mealId, id));
-      if (body.ingredients && body.ingredients.length > 0) {
-        await tx.insert(mealIngredientsTable).values(
-          body.ingredients.map((ing) => ({
+      if (body.mealType !== undefined) {
+        await tx.delete(mealTypesTable).where(eq(mealTypesTable.mealId, id));
+        if (body.mealType && body.mealType.length > 0) {
+          await tx
+            .insert(mealTypesTable)
+            .values(body.mealType.map((type) => ({ mealId: id, mealType: type })));
+        }
+      }
+
+      if (body.ingredients !== undefined) {
+        await tx.delete(mealIngredientsTable).where(eq(mealIngredientsTable.mealId, id));
+        if (body.ingredients && body.ingredients.length > 0) {
+          await tx.insert(mealIngredientsTable).values(
+            body.ingredients.map((ing) => ({
+              mealId: id,
+              text: ing.text,
+              amount: ing.amount ?? '',
+              sortOrder: ing.sort_order,
+            })),
+          );
+        }
+      }
+
+      if (body.instructions !== undefined) {
+        await tx.delete(mealInstructionsTable).where(eq(mealInstructionsTable.mealId, id));
+        if (body.instructions && body.instructions.length > 0) {
+          await tx.insert(mealInstructionsTable).values(
+            body.instructions.map((inst) => ({
+              mealId: id,
+              text: inst.text,
+              image: inst.image ?? null,
+              sortOrder: inst.sort_order,
+            })),
+          );
+        }
+      }
+
+      if (body.nutrition !== undefined) {
+        await tx.delete(mealNutritionTable).where(eq(mealNutritionTable.mealId, id));
+        if (body.nutrition) {
+          await tx.insert(mealNutritionTable).values({
             mealId: id,
-            text: ing.text,
-            amount: ing.amount ?? '',
-            sortOrder: ing.sort_order,
-          })),
-        );
+            calories: body.nutrition.calories,
+            protein: body.nutrition.protein ?? null,
+            carbs: body.nutrition.carbs ?? null,
+            fat: body.nutrition.fat ?? null,
+          });
+        }
       }
+    });
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === '23505') {
+      throw new AppError(
+        409,
+        'MEAL_TITLE_ALREADY_EXISTS',
+        `A meal already exists with the generated slug derived from the title "${body.title}".`,
+      );
     }
-
-    if (body.instructions !== undefined) {
-      await tx.delete(mealInstructionsTable).where(eq(mealInstructionsTable.mealId, id));
-      if (body.instructions && body.instructions.length > 0) {
-        await tx.insert(mealInstructionsTable).values(
-          body.instructions.map((inst) => ({
-            mealId: id,
-            text: inst.text,
-            image: inst.image ?? null,
-            sortOrder: inst.sort_order,
-          })),
-        );
-      }
-    }
-
-    if (body.nutrition !== undefined) {
-      await tx.delete(mealNutritionTable).where(eq(mealNutritionTable.mealId, id));
-      if (body.nutrition) {
-        await tx.insert(mealNutritionTable).values({
-          mealId: id,
-          calories: body.nutrition.calories,
-          protein: body.nutrition.protein ?? null,
-          carbs: body.nutrition.carbs ?? null,
-          fat: body.nutrition.fat ?? null,
-        });
-      }
-    }
-  });
+    throw err;
+  }
 
   return getMealById(id);
 }
@@ -442,60 +455,70 @@ export async function createMeal(body: AddMealBody): Promise<MealDetail> {
     throw new AppError(
       409,
       'MEAL_TITLE_ALREADY_EXISTS',
-      `A meal with the title "${body.title}" already exists.`,
+      `A meal already exists with the generated slug "${slug}" derived from the title "${body.title}".`,
     );
   }
 
-  await db.transaction(async (tx) => {
-    await tx.insert(mealsTable).values({
-      id,
-      title: body.title,
-      slug,
-      image: body.image,
-      description: body.description,
-      cookTime: body.cookTime,
-      difficulty: body.difficulty,
-    });
-
-    if (body.mealType && body.mealType.length > 0) {
-      console.log('body.mealType', body.mealType);
-      await tx
-        .insert(mealTypesTable)
-        .values(body.mealType.map((type) => ({ mealId: id, mealType: type })));
-    }
-
-    if (body.ingredients && body.ingredients.length > 0) {
-      await tx.insert(mealIngredientsTable).values(
-        body.ingredients.map((ing) => ({
-          mealId: id,
-          text: ing.text,
-          amount: ing.amount ?? '',
-          sortOrder: ing.sort_order,
-        })),
-      );
-    }
-
-    if (body.instructions && body.instructions.length > 0) {
-      await tx.insert(mealInstructionsTable).values(
-        body.instructions.map((inst) => ({
-          mealId: id,
-          text: inst.text,
-          image: inst.image ?? null,
-          sortOrder: inst.sort_order,
-        })),
-      );
-    }
-
-    if (body.nutrition) {
-      await tx.insert(mealNutritionTable).values({
-        mealId: id,
-        calories: body.nutrition.calories,
-        protein: body.nutrition.protein ?? null,
-        carbs: body.nutrition.carbs ?? null,
-        fat: body.nutrition.fat ?? null,
+  try {
+    await db.transaction(async (tx) => {
+      await tx.insert(mealsTable).values({
+        id,
+        title: body.title,
+        slug,
+        image: body.image,
+        description: body.description,
+        cookTime: body.cookTime,
+        difficulty: body.difficulty,
       });
+
+      if (body.mealType && body.mealType.length > 0) {
+        await tx
+          .insert(mealTypesTable)
+          .values(body.mealType.map((type) => ({ mealId: id, mealType: type })));
+      }
+
+      if (body.ingredients && body.ingredients.length > 0) {
+        await tx.insert(mealIngredientsTable).values(
+          body.ingredients.map((ing) => ({
+            mealId: id,
+            text: ing.text,
+            amount: ing.amount ?? '',
+            sortOrder: ing.sort_order,
+          })),
+        );
+      }
+
+      if (body.instructions && body.instructions.length > 0) {
+        await tx.insert(mealInstructionsTable).values(
+          body.instructions.map((inst) => ({
+            mealId: id,
+            text: inst.text,
+            image: inst.image ?? null,
+            sortOrder: inst.sort_order,
+          })),
+        );
+      }
+
+      if (body.nutrition) {
+        await tx.insert(mealNutritionTable).values({
+          mealId: id,
+          calories: body.nutrition.calories,
+          protein: body.nutrition.protein ?? null,
+          carbs: body.nutrition.carbs ?? null,
+          fat: body.nutrition.fat ?? null,
+        });
+      }
+    });
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === '23505') {
+      throw new AppError(
+        409,
+        'MEAL_TITLE_ALREADY_EXISTS',
+        `A meal with the title "${body.title}" already exists.`,
+      );
     }
-  });
+    throw err;
+  }
 
   const createdMeal = await getMealById(id);
   if (!createdMeal) {
