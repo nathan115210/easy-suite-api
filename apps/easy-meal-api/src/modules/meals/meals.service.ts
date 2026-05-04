@@ -10,6 +10,7 @@ import {
 import { searchByKeywordCondition } from '../../utils/searchByKeyword';
 import { slugify } from '../../utils/slugify';
 import type {
+  AddMealBody,
   Meal,
   MealDetail,
   MealIngredient,
@@ -277,6 +278,24 @@ export async function updateMeal(id: string, body: UpdateMealBody): Promise<Meal
 
   if (!existing) return null;
 
+  if (body.title !== undefined) {
+    const newSlug = slugify(body.title);
+    const conflicting = await db
+      .select({ id: mealsTable.id })
+      .from(mealsTable)
+      .where(and(eq(mealsTable.slug, newSlug), sql`${mealsTable.id} != ${id}`))
+      .limit(1)
+      .then(([row]) => row);
+
+    if (conflicting) {
+      throw new AppError(
+        409,
+        'MEAL_TITLE_ALREADY_EXISTS',
+        `A meal with the title "${body.title}" already exists.`,
+      );
+    }
+  }
+
   await db.transaction(async (tx) => {
     const mealFields: Partial<typeof mealsTable.$inferInsert> = {};
     if (body.title !== undefined) {
@@ -384,4 +403,103 @@ export async function getMealById(id: string): Promise<MealDetail | null> {
 
       return getMealWithDetails(meal);
     });
+}
+
+export async function createMeal(body: AddMealBody): Promise<MealDetail> {
+  if (body.ingredients) {
+    const dupes = findDuplicateSortOrders(body.ingredients);
+    if (dupes.length > 0) {
+      throw new AppError(
+        400,
+        'DUPLICATE_SORT_ORDER',
+        `Duplicate sort_order values in ingredients: ${dupes.join(', ')}`,
+      );
+    }
+  }
+
+  if (body.instructions) {
+    const dupes = findDuplicateSortOrders(body.instructions);
+    if (dupes.length > 0) {
+      throw new AppError(
+        400,
+        'DUPLICATE_SORT_ORDER',
+        `Duplicate sort_order values in instructions: ${dupes.join(', ')}`,
+      );
+    }
+  }
+
+  const id = crypto.randomUUID();
+  const slug = slugify(body.title);
+
+  const existingSlug = await db
+    .select({ id: mealsTable.id })
+    .from(mealsTable)
+    .where(eq(mealsTable.slug, slug))
+    .limit(1)
+    .then(([row]) => row);
+
+  if (existingSlug) {
+    throw new AppError(
+      409,
+      'MEAL_TITLE_ALREADY_EXISTS',
+      `A meal with the title "${body.title}" already exists.`,
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.insert(mealsTable).values({
+      id,
+      title: body.title,
+      slug,
+      image: body.image,
+      description: body.description,
+      cookTime: body.cookTime,
+      difficulty: body.difficulty,
+    });
+
+    if (body.mealType && body.mealType.length > 0) {
+      console.log('body.mealType', body.mealType);
+      await tx
+        .insert(mealTypesTable)
+        .values(body.mealType.map((type) => ({ mealId: id, mealType: type })));
+    }
+
+    if (body.ingredients && body.ingredients.length > 0) {
+      await tx.insert(mealIngredientsTable).values(
+        body.ingredients.map((ing) => ({
+          mealId: id,
+          text: ing.text,
+          amount: ing.amount ?? '',
+          sortOrder: ing.sort_order,
+        })),
+      );
+    }
+
+    if (body.instructions && body.instructions.length > 0) {
+      await tx.insert(mealInstructionsTable).values(
+        body.instructions.map((inst) => ({
+          mealId: id,
+          text: inst.text,
+          image: inst.image ?? null,
+          sortOrder: inst.sort_order,
+        })),
+      );
+    }
+
+    if (body.nutrition) {
+      await tx.insert(mealNutritionTable).values({
+        mealId: id,
+        calories: body.nutrition.calories,
+        protein: body.nutrition.protein ?? null,
+        carbs: body.nutrition.carbs ?? null,
+        fat: body.nutrition.fat ?? null,
+      });
+    }
+  });
+
+  const createdMeal = await getMealById(id);
+  if (!createdMeal) {
+    throw new Error('Failed to retrieve created meal');
+  }
+  return createdMeal;
 }
