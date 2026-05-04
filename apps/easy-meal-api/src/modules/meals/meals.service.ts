@@ -1,4 +1,4 @@
-import { CookTimeValue, DifficultyLevel, MealType } from '../../../easy-meal-api.types';
+import { MealType } from '../../../easy-meal-api.types';
 import { db } from '../../db';
 import {
   mealsTable,
@@ -15,25 +15,13 @@ import type {
   MealIngredient,
   MealInstruction,
   MealNutrition,
+  MealSearchQuery,
   UpdateMealBody,
 } from './meals.schema';
-import { and, asc, desc, eq, gt, lte, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, lte, sql, type SQL } from 'drizzle-orm';
 import { AppError } from '@easy-suite/utils';
 
 type MealTypeResponse = Exclude<MealType, MealType.Any>;
-
-export type MealSearchQuerySortOption =
-  | 'created_desc'
-  | 'created_asc'
-  | 'cook_time_asc'
-  | 'cook_time_desc';
-
-export type MealSearchQuery = {
-  q?: string;
-  difficulty?: DifficultyLevel;
-  cookTime?: CookTimeValue;
-  sort?: MealSearchQuerySortOption;
-};
 
 export async function getAllMeals(query: MealSearchQuery = {}): Promise<MealDetail[]> {
   const filters: SQL[] = [];
@@ -47,24 +35,21 @@ export async function getAllMeals(query: MealSearchQuery = {}): Promise<MealDeta
   }
 
   // Only apply difficulty filter if it's specified and not "any"
-  if (query.difficulty && query.difficulty !== DifficultyLevel.Any) {
+  if (query.difficulty && query.difficulty !== 'any') {
     filters.push(eq(mealsTable.difficulty, query.difficulty));
   }
 
-  // Only apply cook time filter if it's specified and not "any"
-  if (query.cookTime && query.cookTime !== CookTimeValue.Any) {
-    const cookTimeFilter = {
-      [CookTimeValue.Under15]: lte(mealsTable.cookTime, 15),
-      [CookTimeValue.Under30]: lte(mealsTable.cookTime, 30),
-      [CookTimeValue.Under45]: lte(mealsTable.cookTime, 45),
-      [CookTimeValue.Under60]: lte(mealsTable.cookTime, 60),
-      [CookTimeValue.Over60]: gt(mealsTable.cookTime, 60),
-    }[query.cookTime];
-
-    filters.push(cookTimeFilter);
+  if (query.cookTime && query.cookTime !== 'any') {
+    const cookTimeFilter: Record<string, ReturnType<typeof lte>> = {
+      under_15: lte(mealsTable.cookTime, 15),
+      under_30: lte(mealsTable.cookTime, 30),
+      under_45: lte(mealsTable.cookTime, 45),
+      under_60: lte(mealsTable.cookTime, 60),
+      over_60: gt(mealsTable.cookTime, 60),
+    };
+    filters.push(cookTimeFilter[query.cookTime]!);
   }
 
-  // Default to sorting by newest created if no valid sort option is provided
   const orderBy = {
     created_asc: asc(mealsTable.createdAt),
     created_desc: desc(mealsTable.createdAt),
@@ -108,7 +93,74 @@ export async function getAllMeals(query: MealSearchQuery = {}): Promise<MealDeta
 
   const meals = await mealsQuery.orderBy(orderBy);
 
-  return Promise.all(meals.map((meal) => getMealWithDetails(meal)));
+  if (meals.length === 0) return [];
+
+  const mealIds = meals.map((m) => m.id);
+
+  const [allIngredients, allInstructions, allNutrition] = await Promise.all([
+    db
+      .select({
+        mealId: mealIngredientsTable.mealId,
+        text: mealIngredientsTable.text,
+        amount: mealIngredientsTable.amount,
+        sort_order: mealIngredientsTable.sortOrder,
+      })
+      .from(mealIngredientsTable)
+      .where(inArray(mealIngredientsTable.mealId, mealIds)),
+    db
+      .select({
+        mealId: mealInstructionsTable.mealId,
+        text: mealInstructionsTable.text,
+        image: mealInstructionsTable.image,
+        sort_order: mealInstructionsTable.sortOrder,
+      })
+      .from(mealInstructionsTable)
+      .where(inArray(mealInstructionsTable.mealId, mealIds)),
+    db
+      .select({
+        mealId: mealNutritionTable.mealId,
+        calories: mealNutritionTable.calories,
+        protein: mealNutritionTable.protein,
+        carbs: mealNutritionTable.carbs,
+        fat: mealNutritionTable.fat,
+      })
+      .from(mealNutritionTable)
+      .where(inArray(mealNutritionTable.mealId, mealIds)),
+  ]);
+
+  const ingredientsByMeal = new Map<string, MealIngredient[]>();
+  for (const row of allIngredients) {
+    const list = ingredientsByMeal.get(row.mealId) ?? [];
+    list.push({ text: row.text, amount: row.amount, sort_order: row.sort_order });
+    ingredientsByMeal.set(row.mealId, list);
+  }
+  ingredientsByMeal.forEach((list) => list.sort((a, b) => a.sort_order - b.sort_order));
+
+  const instructionsByMeal = new Map<string, MealInstruction[]>();
+  for (const row of allInstructions) {
+    const list = instructionsByMeal.get(row.mealId) ?? [];
+    list.push({ text: row.text, image: row.image ?? null, sort_order: row.sort_order });
+    instructionsByMeal.set(row.mealId, list);
+  }
+  instructionsByMeal.forEach((list) => list.sort((a, b) => a.sort_order - b.sort_order));
+
+  const nutritionByMeal = new Map<string, MealNutrition>();
+  for (const row of allNutrition) {
+    nutritionByMeal.set(row.mealId, {
+      calories: row.calories,
+      protein: row.protein,
+      carbs: row.carbs,
+      fat: row.fat,
+    });
+  }
+
+  return meals.map((meal) => ({
+    ...meal,
+    mealType: meal.mealType ?? null,
+    ingredients: ingredientsByMeal.get(meal.id) ?? null,
+    instructions: instructionsByMeal.get(meal.id) ?? null,
+    nutrition: nutritionByMeal.get(meal.id) ?? null,
+  }));
 }
 
 async function getIngredientsByMealId(mealId: string): Promise<MealIngredient[] | null> {
@@ -162,10 +214,14 @@ async function getNutritionByMealId(mealId: string): Promise<MealNutrition | nul
     .then(([nutrition]) => nutrition || null);
 }
 
+// Used only by getMealById (single-meal path). Not used by getAllMeals,
+// which batches all three lookups into one IN-query round-trip each.
 async function getMealWithDetails(meal: Meal): Promise<MealDetail> {
-  const ingredientsData = await getIngredientsByMealId(meal.id);
-  const instructionsData = await getInstructionsByMealId(meal.id);
-  const nutritionData = await getNutritionByMealId(meal.id);
+  const [ingredientsData, instructionsData, nutritionData] = await Promise.all([
+    getIngredientsByMealId(meal.id),
+    getInstructionsByMealId(meal.id),
+    getNutritionByMealId(meal.id),
+  ]);
 
   return {
     ...meal,

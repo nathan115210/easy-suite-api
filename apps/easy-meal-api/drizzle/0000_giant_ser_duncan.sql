@@ -1,1 +1,0 @@
-ALTER TABLE meals DROP COLUMN IF EXISTS meal_type;

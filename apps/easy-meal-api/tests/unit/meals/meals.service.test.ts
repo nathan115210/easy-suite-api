@@ -21,6 +21,8 @@ const mockSelect = db.select as jest.Mock;
 const mockTransaction = db.transaction as unknown as jest.Mock;
 let builders: ReturnType<typeof makeQueryBuilder>[];
 
+// Each call to db.select() consumes the next item in the queue, simulating
+// the sequence of DB round-trips the service makes (meals → ingredients → …).
 function queueSelectResults(...resultSets: unknown[][]) {
   const queue = [...resultSets];
   mockSelect.mockImplementation(() => {
@@ -108,6 +110,8 @@ describe('getAllMeals', () => {
     mockSelect.mockReturnValue(makeQueryBuilder([]));
     const result = await getAllMeals();
     expect(result).toEqual([]);
+    // Early return: the three batch queries (ingredients/instructions/nutrition) must not fire.
+    expect(mockSelect).toHaveBeenCalledTimes(1);
   });
 
   it('selects the expected columns', async () => {
@@ -183,16 +187,19 @@ describe('getAllMeals', () => {
   });
 
   it('includes ingredients, instructions, and nutrition for each meal', async () => {
+    // mealId is required: the service groups these rows by mealId in memory after
+    // the batch IN-query, so rows without it would never be matched to any meal.
     const ingredients = [
-      { text: 'Olive oil', amount: '1 tbsp', sort_order: 2 },
-      { text: 'Pasta', amount: '200g', sort_order: 1 },
+      { mealId: mockMeal.id, text: 'Olive oil', amount: '1 tbsp', sort_order: 2 },
+      { mealId: mockMeal.id, text: 'Pasta', amount: '200g', sort_order: 1 },
     ];
     const instructions = [
-      { text: 'Serve warm', image: null, sort_order: 2 },
-      { text: 'Boil pasta', image: null, sort_order: 1 },
+      { mealId: mockMeal.id, text: 'Serve warm', image: null, sort_order: 2 },
+      { mealId: mockMeal.id, text: 'Boil pasta', image: null, sort_order: 1 },
     ];
     const nutrition = [
       {
+        mealId: mockMeal.id,
         calories: 550,
         protein: null,
         carbs: 70,
@@ -223,6 +230,34 @@ describe('getAllMeals', () => {
         },
       },
     ]);
+  });
+  it('correctly groups related data by mealId when multiple meals are returned', async () => {
+    const meal2: Meal = {
+      ...mockMeal,
+      id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      title: 'Salad',
+      slug: 'salad',
+    };
+
+    // Rows from the single batch query span multiple meals; grouping must be exact.
+    const ingredients = [
+      { mealId: mockMeal.id, text: 'Pasta', amount: '200g', sort_order: 1 },
+      { mealId: meal2.id, text: 'Lettuce', amount: '100g', sort_order: 1 },
+    ];
+    const instructions: unknown[] = [];
+    const nutrition = [{ mealId: mockMeal.id, calories: 550, protein: null, carbs: 70, fat: 15 }];
+
+    queueSelectResults([mockMeal, meal2], ingredients, instructions, nutrition);
+
+    const result = await getAllMeals();
+
+    expect(result).toHaveLength(2);
+    expect(result[0]!.ingredients).toEqual([{ text: 'Pasta', amount: '200g', sort_order: 1 }]);
+    expect(result[1]!.ingredients).toEqual([{ text: 'Lettuce', amount: '100g', sort_order: 1 }]);
+    expect(result[0]!.nutrition).toEqual({ calories: 550, protein: null, carbs: 70, fat: 15 });
+    expect(result[1]!.nutrition).toBeNull();
+    expect(result[0]!.instructions).toBeNull();
+    expect(result[1]!.instructions).toBeNull();
   });
 });
 
@@ -371,8 +406,8 @@ describe('updateMeal', () => {
     await expect(
       updateMeal(mockMeal.id, {
         ingredients: [
-          { text: 'Pasta', sort_order: 1 },
-          { text: 'Sauce', sort_order: 1 },
+          { text: 'Pasta', amount: '', sort_order: 1 },
+          { text: 'Sauce', amount: '', sort_order: 1 },
         ],
       }),
     ).rejects.toMatchObject({
@@ -401,10 +436,10 @@ describe('updateMeal', () => {
     await expect(
       updateMeal(mockMeal.id, {
         ingredients: [
-          { text: 'A', sort_order: 1 },
-          { text: 'B', sort_order: 1 },
-          { text: 'C', sort_order: 3 },
-          { text: 'D', sort_order: 3 },
+          { text: 'A', amount: '', sort_order: 1 },
+          { text: 'B', amount: '', sort_order: 1 },
+          { text: 'C', amount: '', sort_order: 3 },
+          { text: 'D', amount: '', sort_order: 3 },
         ],
       }),
     ).rejects.toMatchObject({
@@ -489,8 +524,8 @@ describe('updateMeal', () => {
     await expect(
       updateMeal(mockMeal.id, {
         ingredients: [
-          { text: 'A', sort_order: 2 },
-          { text: 'B', sort_order: 2 },
+          { text: 'A', amount: '', sort_order: 2 },
+          { text: 'B', amount: '', sort_order: 2 },
         ],
       }),
     ).rejects.toBeInstanceOf(AppError);

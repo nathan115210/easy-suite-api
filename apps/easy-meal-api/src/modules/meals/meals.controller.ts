@@ -1,15 +1,32 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ApiSuccess, ApiError } from '@easy-suite/utils';
-import { getAllMeals, getMealById, updateMeal, type MealSearchQuery } from './meals.service';
-import { UpdateMealBodySchema, type Meal, type MealDetail } from './meals.schema';
+import { getAllMeals, getMealById, updateMeal } from './meals.service';
+import {
+  MealSearchQuerySchema,
+  UpdateMealBodySchema,
+  type Meal,
+  type MealDetail,
+} from './meals.schema';
 
 export async function getAllMealsController(
-  req: Request<Record<string, never>, ApiSuccess<Meal[]>, never, MealSearchQuery>,
-  res: Response<ApiSuccess<Meal[]>>,
+  req: Request,
+  res: Response<ApiSuccess<MealDetail[]> | ApiError>,
   next: NextFunction,
 ): Promise<void> {
+  const parsed = MealSearchQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: {
+        code: 'INVALID_QUERY',
+        message: 'Invalid query parameters',
+        details: parsed.error.issues,
+      },
+    });
+    return;
+  }
+
   try {
-    const data = await getAllMeals(req.query);
+    const data = await getAllMeals(parsed.data);
     res.status(200).json({ data });
   } catch (err) {
     next(err);

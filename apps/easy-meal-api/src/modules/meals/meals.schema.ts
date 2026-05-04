@@ -37,7 +37,7 @@ export const MealIngredientSchema = registry.register(
   'MealIngredient',
   z.object({
     text: z.string().openapi({ description: 'Ingredient description' }),
-    amount: z.string().optional().openapi({ description: 'Ingredient amount' }),
+    amount: z.string().openapi({ description: 'Ingredient amount' }),
     sort_order: z.number().int().openapi({ description: 'Ingredient order in the list' }),
   }),
 );
@@ -52,7 +52,8 @@ export const MealInstructionSchema = registry.register(
       .string()
       .optional()
       .nullable()
-      .openapi({ description: 'Instruction image URL, if available. ' }),
+      .openapi({ description: 'Instruction image URL, if available.' }),
+
     sort_order: z.number().int().openapi({ description: 'Instruction order in the list' }),
   }),
 );
@@ -120,6 +121,13 @@ export const UpdateMealBodySchema = z.object({
 });
 
 export type UpdateMealBody = z.infer<typeof UpdateMealBodySchema>;
+
+export type MealSearchQuery = {
+  q?: string;
+  difficulty?: 'any' | 'easy' | 'medium' | 'hard';
+  cookTime?: 'any' | 'under_15' | 'under_30' | 'under_45' | 'under_60' | 'over_60';
+  sort?: 'created_desc' | 'created_asc' | 'cook_time_asc' | 'cook_time_desc';
+};
 
 export const MealSearchQuerySchema = z.object({
   q: z.string().optional().openapi({ description: 'Search keyword matched against meal titles' }),
