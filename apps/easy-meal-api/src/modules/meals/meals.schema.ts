@@ -208,7 +208,7 @@ registry.registerPath({
 registry.registerPath({
   method: 'put',
   path: '/v1/meals/{id}',
-  summary: 'Replace a meal by ID',
+  summary: 'Update a meal by ID',
   tags: ['Meals'],
   request: {
     params: z.object({

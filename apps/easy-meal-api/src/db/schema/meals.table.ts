@@ -8,7 +8,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm/sql/sql';
+import { sql } from 'drizzle-orm';
 
 export const difficultyLevelEnum = pgEnum('difficulty_level', ['easy', 'medium', 'hard']);
 export const mealsTable = pgTable(

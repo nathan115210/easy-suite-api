@@ -5,11 +5,11 @@ describe('slugify', () => {
     expect(slugify('Spaghetti Bolognese')).toBe('spaghetti-bolognese');
   });
 
-  it('replaces spaces with hyphens', () => {
+  it('updates spaces with hyphens', () => {
     expect(slugify('hello world')).toBe('hello-world');
   });
 
-  it('replaces multiple consecutive spaces with a single hyphen', () => {
+  it('updates multiple consecutive spaces with a single hyphen', () => {
     expect(slugify('hello   world')).toBe('hello-world');
   });
 
@@ -25,7 +25,7 @@ describe('slugify', () => {
     expect(slugify('hello!')).toBe('hello');
   });
 
-  it('replaces non-alphanumeric characters with hyphens', () => {
+  it('updates non-alphanumeric characters with hyphens', () => {
     expect(slugify('chicken & rice')).toBe('chicken-rice');
   });
 

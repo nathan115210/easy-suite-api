@@ -148,7 +148,7 @@ Related `ingredients`, `instructions`, and `nutrition` are `null` when no data i
 PUT /v1/meals/{id}
 ```
 
-Partially updates a meal. Only fields present in the request body are changed. When `title` is updated, `slug` is automatically re-derived. Relation fields (`mealType`, `ingredients`, `instructions`, `nutrition`) are fully replaced when provided, or left untouched when omitted.
+Partially updates a meal. Only fields present in the request body are changed. When `title` is updated, `slug` is automatically re-derived. Relation fields (`mealType`, `ingredients`, `instructions`, `nutrition`) are fully updated when provided, or left untouched when omitted.
 
 All request body fields are optional:
 
@@ -159,7 +159,7 @@ All request body fields are optional:
 | `description`  | string         |                                              |
 | `cookTime`     | number \| null | Minutes                                      |
 | `difficulty`   | enum \| null   | `easy`, `medium`, `hard`                     |
-| `mealType`     | array \| null  | Replaces all meal type entries               |
+| `mealType`     | array \| null  | Updates all meal type entries                |
 | `ingredients`  | array \| null  | `sort_order` must be unique within the array |
 | `instructions` | array \| null  | `sort_order` must be unique within the array |
 | `nutrition`    | object \| null |                                              |

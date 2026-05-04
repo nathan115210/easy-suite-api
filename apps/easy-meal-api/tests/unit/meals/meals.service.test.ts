@@ -481,7 +481,7 @@ describe('updateMeal', () => {
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it('skips mealType replacement when mealType is not provided', async () => {
+  it('skips mealType update when mealType is not provided', async () => {
     const tx = makeTx();
     mockTransaction.mockImplementation(
       async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
@@ -494,7 +494,7 @@ describe('updateMeal', () => {
     expect(deletedTables).not.toContain(mealTypesTable);
   });
 
-  it('replaces mealType rows when mealType is provided', async () => {
+  it('updates mealType rows when mealType is provided', async () => {
     const tx = makeTx();
     mockTransaction.mockImplementation(
       async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
