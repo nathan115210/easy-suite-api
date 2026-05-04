@@ -6,18 +6,26 @@ jest.mock('../../../src/modules/meals/meals.service', () => ({
   getAllMeals: jest.fn(),
   getMealById: jest.fn(),
   updateMeal: jest.fn(),
+  createMeal: jest.fn(),
 }));
 
-import { getAllMeals, getMealById, updateMeal } from '../../../src/modules/meals/meals.service';
+import {
+  getAllMeals,
+  getMealById,
+  updateMeal,
+  createMeal,
+} from '../../../src/modules/meals/meals.service';
 import {
   getAllMealsController,
   getMealByIdController,
   updateMealController,
+  addMealController,
 } from '../../../src/modules/meals/meals.controller';
 
 const mockGetAllMeals = getAllMeals as jest.Mock;
 const mockGetMealById = getMealById as jest.Mock;
 const mockUpdateMeal = updateMeal as jest.Mock;
+const mockCreateMeal = createMeal as jest.Mock;
 
 const mockMeal: Meal = {
   id: '550e8400-e29b-41d4-a716-446655440000',
@@ -28,6 +36,9 @@ const mockMeal: Meal = {
   cookTime: 30,
   difficulty: 'medium',
   mealType: [MealType.Dinner],
+  ingredients: null,
+  instructions: null,
+  nutrition: null,
 };
 
 function makeRes() {
@@ -171,6 +182,13 @@ describe('getMealByIdController', () => {
 
 const mockMealDetail = { ...mockMeal, ingredients: null, instructions: null, nutrition: null };
 const validUpdateBody = { title: 'Updated Meal' };
+const validAddBody = {
+  title: 'New Meal',
+  image: 'https://example.com/new.jpg',
+  description: 'A brand new meal',
+  cookTime: 20,
+  difficulty: 'easy' as const,
+};
 
 describe('updateMealController', () => {
   it('returns 200 with the updated meal', async () => {
@@ -251,6 +269,61 @@ describe('updateMealController', () => {
     const next = makeNext();
 
     await updateMealController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe('addMealController', () => {
+  it('returns 201 with the created meal', async () => {
+    mockCreateMeal.mockResolvedValue(mockMealDetail);
+    const req = { body: validAddBody } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await addMealController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({ data: mockMealDetail });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('passes the parsed body to the service', async () => {
+    mockCreateMeal.mockResolvedValue(mockMealDetail);
+    const req = { body: validAddBody } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await addMealController(req, res, next);
+
+    expect(mockCreateMeal).toHaveBeenCalledWith(validAddBody);
+  });
+
+  it('returns 400 with INVALID_BODY when required fields are missing', async () => {
+    const req = { body: {} } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await addMealController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'INVALID_BODY' }),
+      }),
+    );
+    expect(mockCreateMeal).not.toHaveBeenCalled();
+  });
+
+  it('calls next() with the error when the service throws', async () => {
+    const error = new Error('DB error');
+    mockCreateMeal.mockRejectedValue(error);
+    const req = { body: validAddBody } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await addMealController(req, res, next);
 
     expect(next).toHaveBeenCalledWith(error);
     expect(res.status).not.toHaveBeenCalled();

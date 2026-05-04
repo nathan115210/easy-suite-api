@@ -15,7 +15,12 @@ jest.mock('../../../src/db/index', () => ({
 }));
 
 import { db } from '../../../src/db/index';
-import { getAllMeals, getMealById, updateMeal } from '../../../src/modules/meals/meals.service';
+import {
+  getAllMeals,
+  getMealById,
+  updateMeal,
+  createMeal,
+} from '../../../src/modules/meals/meals.service';
 
 const mockSelect = db.select as jest.Mock;
 const mockTransaction = db.transaction as unknown as jest.Mock;
@@ -69,6 +74,9 @@ const mockMeal: Meal = {
   cookTime: 30,
   difficulty: 'medium',
   mealType: [MealType.Dinner],
+  ingredients: null,
+  instructions: null,
+  nutrition: null,
 };
 
 function makeTx() {
@@ -460,7 +468,7 @@ describe('updateMeal', () => {
     mockTransaction.mockImplementation(
       async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
     );
-    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+    queueSelectResults([{ id: mockMeal.id }], [], [mockMeal], [], [], []);
 
     await updateMeal(mockMeal.id, { title: 'New Meal Title' });
 
@@ -486,7 +494,7 @@ describe('updateMeal', () => {
     mockTransaction.mockImplementation(
       async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
     );
-    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+    queueSelectResults([{ id: mockMeal.id }], [], [mockMeal], [], [], []);
 
     await updateMeal(mockMeal.id, { title: 'Updated Title' });
 
@@ -513,7 +521,7 @@ describe('updateMeal', () => {
     mockTransaction.mockImplementation(
       async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
     );
-    queueSelectResults([{ id: mockMeal.id }], [mockMeal], [], [], []);
+    queueSelectResults([{ id: mockMeal.id }], [], [mockMeal], [], [], []);
 
     const result = await updateMeal(mockMeal.id, { title: mockMeal.title });
 
@@ -529,5 +537,108 @@ describe('updateMeal', () => {
         ],
       }),
     ).rejects.toBeInstanceOf(AppError);
+  });
+
+  it('throws MEAL_TITLE_ALREADY_EXISTS when a different meal has the same title', async () => {
+    queueSelectResults([{ id: mockMeal.id }], [{ id: 'other-meal-id' }]);
+
+    await expect(updateMeal(mockMeal.id, { title: mockMeal.title })).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'MEAL_TITLE_ALREADY_EXISTS',
+    });
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('createMeal', () => {
+  const newMealBody = {
+    title: mockMeal.title,
+    image: mockMeal.image,
+    description: mockMeal.description,
+    cookTime: mockMeal.cookTime,
+    difficulty: mockMeal.difficulty,
+  };
+
+  it('throws DUPLICATE_SORT_ORDER before any DB call when ingredients have duplicate sort_orders', async () => {
+    await expect(
+      createMeal({
+        ...newMealBody,
+        ingredients: [
+          { text: 'Pasta', amount: '', sort_order: 1 },
+          { text: 'Sauce', amount: '', sort_order: 1 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: 'DUPLICATE_SORT_ORDER',
+      message: 'Duplicate sort_order values in ingredients: 1',
+    });
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('throws DUPLICATE_SORT_ORDER before any DB call when instructions have duplicate sort_orders', async () => {
+    await expect(
+      createMeal({
+        ...newMealBody,
+        instructions: [
+          { text: 'Step A', sort_order: 0 },
+          { text: 'Step B', sort_order: 0 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: 'DUPLICATE_SORT_ORDER',
+      message: 'Duplicate sort_order values in instructions: 0',
+    });
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('throws AppError with statusCode 400 for duplicate sort_orders', async () => {
+    await expect(
+      createMeal({
+        ...newMealBody,
+        ingredients: [
+          { text: 'A', amount: '', sort_order: 2 },
+          { text: 'B', amount: '', sort_order: 2 },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(AppError);
+  });
+
+  it('creates a meal and returns it when the title is unique', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([], [mockMeal], [], [], []);
+
+    const result = await createMeal(newMealBody);
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ ...mockMeal, ingredients: null, instructions: null, nutrition: null });
+  });
+
+  it('inserts with a slug derived from the title', async () => {
+    const tx = makeTx();
+    mockTransaction.mockImplementation(
+      async (fn: (tx: ReturnType<typeof makeTx>) => Promise<void>) => fn(tx),
+    );
+    queueSelectResults([], [mockMeal], [], [], []);
+
+    await createMeal(newMealBody);
+
+    expect(tx.insert).toHaveBeenCalledWith(mealsTable);
+    const insertValues = tx.insert.mock.results[0]!.value.values as jest.Mock;
+    expect(insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: 'spaghetti-bolognese' }),
+    );
+  });
+
+  it('throws MEAL_TITLE_ALREADY_EXISTS when another meal has the same slug', async () => {
+    queueSelectResults([{ id: 'existing-meal-id' }]);
+
+    await expect(createMeal(newMealBody)).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'MEAL_TITLE_ALREADY_EXISTS',
+    });
+    expect(mockTransaction).not.toHaveBeenCalled();
   });
 });

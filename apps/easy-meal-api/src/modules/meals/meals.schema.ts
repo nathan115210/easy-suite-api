@@ -11,28 +11,6 @@ const MealTypeResponseSchema = z.enum([
   MealType.Drinks,
 ]);
 
-export const MealSchema = registry.register(
-  'Meal',
-  z.object({
-    id: z.string().uuid().openapi({ description: 'Unique meal identifier' }),
-    title: z.string().openapi({ description: 'Display name of the meal' }),
-    slug: z.string().openapi({ description: 'URL-safe identifier' }),
-    image: z.string().openapi({ description: 'Image URL' }),
-    description: z.string().openapi({ description: 'Short description' }),
-    cookTime: z.number().int().nullable().openapi({ description: 'Cook time in minutes' }),
-    difficulty: z
-      .enum(['easy', 'medium', 'hard'])
-      .nullable()
-      .openapi({ description: 'Difficulty level' }),
-    mealType: z
-      .array(MealTypeResponseSchema)
-      .nullable()
-      .openapi({ description: 'Meal categories, or null when no meal types are assigned' }),
-  }),
-);
-
-export type Meal = z.infer<typeof MealSchema>;
-
 export const MealIngredientSchema = registry.register(
   'MealIngredient',
   z.object({
@@ -72,9 +50,23 @@ export const MealNutritionSchema = registry.register(
 
 export type MealNutrition = z.infer<typeof MealNutritionSchema>;
 
-export const MealDetailSchema = registry.register(
-  'MealDetail',
-  MealSchema.extend({
+export const MealSchema = registry.register(
+  'Meal',
+  z.object({
+    id: z.string().uuid().openapi({ description: 'Unique meal identifier' }),
+    title: z.string().openapi({ description: 'Display name of the meal' }),
+    slug: z.string().openapi({ description: 'URL-safe identifier' }),
+    image: z.string().openapi({ description: 'Image URL' }),
+    description: z.string().openapi({ description: 'Short description' }),
+    cookTime: z.number().int().nullable().openapi({ description: 'Cook time in minutes' }),
+    difficulty: z
+      .enum(['easy', 'medium', 'hard'])
+      .nullable()
+      .openapi({ description: 'Difficulty level' }),
+    mealType: z
+      .array(MealTypeResponseSchema)
+      .nullable()
+      .openapi({ description: 'Meal categories, or null when no meal types are assigned' }),
     ingredients: z
       .array(MealIngredientSchema)
       .nullable()
@@ -87,6 +79,49 @@ export const MealDetailSchema = registry.register(
     }),
   }),
 );
+
+export type Meal = z.infer<typeof MealSchema>;
+
+export const AddMealBodySchema = registry.register(
+  'AddMealBody',
+  z.object({
+    title: z.string().openapi({ description: 'Display name of the meal' }),
+    image: z.string().openapi({ description: 'Image URL' }),
+    description: z.string().openapi({ description: 'Short description' }),
+    cookTime: z
+      .number()
+      .int()
+      .nullable()
+      .optional()
+      .openapi({ description: 'Cook time in minutes' }),
+    difficulty: z
+      .enum(['easy', 'medium', 'hard'])
+      .nullable()
+      .openapi({ description: 'Difficulty level' }),
+    mealType: z
+      .array(MealTypeResponseSchema)
+      .nullable()
+      .optional()
+      .openapi({ description: 'Meal categories' }),
+    ingredients: z
+      .array(MealIngredientSchema)
+      .nullable()
+      .optional()
+      .openapi({ description: 'Ingredient list' }),
+    instructions: z
+      .array(MealInstructionSchema)
+      .nullable()
+      .optional()
+      .openapi({ description: 'Preparation steps' }),
+    nutrition: MealNutritionSchema.nullable()
+      .optional()
+      .openapi({ description: 'Per-serving nutrition info' }),
+  }),
+);
+
+export type AddMealBody = z.infer<typeof AddMealBodySchema>;
+
+export const MealDetailSchema = registry.register('MealDetail', MealSchema);
 
 export type MealDetail = z.infer<typeof MealDetailSchema>;
 
@@ -244,6 +279,65 @@ registry.registerPath({
         'application/json': {
           schema: z.object({
             error: z.object({ code: z.literal('NOT_FOUND'), message: z.string() }),
+          }),
+        },
+      },
+    },
+    409: {
+      description: 'A meal with the same title already exists',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.literal('MEAL_TITLE_ALREADY_EXISTS'),
+              message: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/v1/meals',
+  summary: 'Add a new meal',
+  tags: ['Meals'],
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: AddMealBodySchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'The created meal',
+      content: { 'application/json': { schema: z.object({ data: MealDetailSchema }) } },
+    },
+    400: {
+      description: 'Invalid request body',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.string(),
+              message: z.string(),
+              details: z.unknown().optional(),
+            }),
+          }),
+        },
+      },
+    },
+    409: {
+      description: 'A meal with the same title already exists',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.literal('MEAL_TITLE_ALREADY_EXISTS'),
+              message: z.string(),
+            }),
           }),
         },
       },

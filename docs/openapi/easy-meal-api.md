@@ -51,8 +51,8 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
       "image": "string",
       "description": "string",
       "cookTime": 30,
-      "difficulty": "easy | medium | hard",
-      "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+      "difficulty": "easy",
+      "mealType": ["dinner"],
       "ingredients": [
         {
           "text": "string",
@@ -63,7 +63,7 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
       "instructions": [
         {
           "text": "string",
-          "image": "string | null",
+          "image": null,
           "sort_order": 0
         }
       ],
@@ -80,6 +80,74 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
 
 `mealType` is returned as a JSON array when assigned, for example `["dinner"]`. It is `null` when no meal types are assigned.
 `ingredients` and `instructions` are ordered by `sort_order`. `ingredients`, `instructions`, and `nutrition` are `null` when no related data is available.
+
+---
+
+#### `POST /v1/meals`
+
+Creates a new meal. `slug` is automatically derived from `title`.
+
+**Request body**
+
+| Field          | Type                                                                                                        | Required | Description                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------- |
+| `title`        | string                                                                                                      | Yes      | Display name of the meal           |
+| `image`        | string                                                                                                      | Yes      | Image URL                          |
+| `description`  | string                                                                                                      | Yes      | Short description                  |
+| `difficulty`   | `"easy" \| "medium" \| "hard" \| null`                                                                      | Yes      | Difficulty level; `null` for unset |
+| `cookTime`     | number \| null                                                                                              | No       | Cook time in minutes               |
+| `mealType`     | `["breakfast \| lunch \| dinner \| snacks \| dessert \| drinks"]` \| null                                   | No       | Meal categories                    |
+| `ingredients`  | `[{ "text": string, "amount": string, "sort_order": number }]` \| null                                      | No       | Ingredient list                    |
+| `instructions` | `[{ "text": string, "image": string \| null, "sort_order": number }]` \| null                               | No       | Preparation steps                  |
+| `nutrition`    | `{ "calories": number, "protein": number \| null, "carbs": number \| null, "fat": number \| null }` \| null | No       | Per-serving nutrition              |
+
+```json
+{
+  "title": "string",
+  "image": "string",
+  "description": "string",
+  "difficulty": "easy",
+  "cookTime": 30,
+  "mealType": ["dinner"],
+  "ingredients": [{ "text": "string", "amount": "string", "sort_order": 0 }],
+  "instructions": [{ "text": "string", "image": null, "sort_order": 0 }],
+  "nutrition": {
+    "calories": 500,
+    "protein": 30,
+    "carbs": 60,
+    "fat": 15
+  }
+}
+```
+
+- `sort_order` values must be unique within `ingredients` and within `instructions`.
+
+**Response `201`**
+
+Returns the full created `MealDetail` object (same shape as `GET /v1/meals/{id}`).
+
+**Response `400`** — invalid request body or duplicate `sort_order` values
+
+```json
+{
+  "error": {
+    "code": "INVALID_BODY | DUPLICATE_SORT_ORDER",
+    "message": "string",
+    "details": []
+  }
+}
+```
+
+**Response `409`** — a meal with the same title already exists
+
+```json
+{
+  "error": {
+    "code": "MEAL_TITLE_ALREADY_EXISTS",
+    "message": "string"
+  }
+}
+```
 
 ---
 
@@ -104,8 +172,8 @@ Returns a single meal by UUID.
     "image": "string",
     "description": "string",
     "cookTime": 30,
-    "difficulty": "easy | medium | hard",
-    "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+    "difficulty": "easy",
+    "mealType": ["dinner"],
     "ingredients": [
       {
         "text": "string",
@@ -116,7 +184,7 @@ Returns a single meal by UUID.
     "instructions": [
       {
         "text": "string",
-        "image": "string | null",
+        "image": null,
         "sort_order": 0
       }
     ],
@@ -174,10 +242,10 @@ Partially updates a meal by UUID. Only the fields included in the request body a
   "image": "string",
   "description": "string",
   "cookTime": 30,
-  "difficulty": "easy | medium | hard | null",
-  "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+  "difficulty": "easy",
+  "mealType": ["dinner"],
   "ingredients": [{ "text": "string", "amount": "string", "sort_order": 0 }],
-  "instructions": [{ "text": "string", "image": "string | null", "sort_order": 0 }],
+  "instructions": [{ "text": "string", "image": null, "sort_order": 0 }],
   "nutrition": {
     "calories": 500,
     "protein": 30,
