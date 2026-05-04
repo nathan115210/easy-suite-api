@@ -33,6 +33,62 @@ export const MealSchema = registry.register(
 
 export type Meal = z.infer<typeof MealSchema>;
 
+export const MealIngredientSchema = registry.register(
+  'MealIngredient',
+  z.object({
+    text: z.string().openapi({ description: 'Ingredient description' }),
+    amount: z.string().optional().openapi({ description: 'Ingredient amount' }),
+    sort_order: z.number().int().openapi({ description: 'Ingredient order in the list' }),
+  }),
+);
+
+export type MealIngredient = z.infer<typeof MealIngredientSchema>;
+
+export const MealInstructionSchema = registry.register(
+  'MealInstruction',
+  z.object({
+    text: z.string().openapi({ description: 'Instruction text' }),
+    image: z
+      .string()
+      .optional()
+      .nullable()
+      .openapi({ description: 'Instruction image URL, if available. ' }),
+    sort_order: z.number().int().openapi({ description: 'Instruction order in the list' }),
+  }),
+);
+
+export type MealInstruction = z.infer<typeof MealInstructionSchema>;
+
+export const MealNutritionSchema = registry.register(
+  'MealNutrition',
+  z.object({
+    calories: z.number().int().openapi({ description: 'Calories in kcal' }),
+    protein: z.number().nullable().openapi({ description: 'Protein content in grams' }),
+    carbs: z.number().nullable().openapi({ description: 'Carbohydrates content in grams' }),
+    fat: z.number().nullable().openapi({ description: 'Fat content in grams' }),
+  }),
+);
+
+export type MealNutrition = z.infer<typeof MealNutritionSchema>;
+
+export const MealDetailSchema = registry.register(
+  'MealDetail',
+  MealSchema.extend({
+    ingredients: z
+      .array(MealIngredientSchema)
+      .nullable()
+      .openapi({ description: 'Ingredients ordered by sort_order, or null when unavailable' }),
+    instructions: z.array(MealInstructionSchema).nullable().openapi({
+      description: 'Preparation instructions ordered by sort_order, or null when unavailable',
+    }),
+    nutrition: MealNutritionSchema.nullable().openapi({
+      description: 'Per-serving nutrition details, or null when unavailable',
+    }),
+  }),
+);
+
+export type MealDetail = z.infer<typeof MealDetailSchema>;
+
 export const MealSearchQuerySchema = z.object({
   q: z.string().optional().openapi({ description: 'Search keyword matched against meal titles' }),
   difficulty: z
@@ -60,7 +116,7 @@ registry.registerPath({
   responses: {
     200: {
       description: 'A list of meals',
-      content: { 'application/json': { schema: z.object({ data: z.array(MealSchema) }) } },
+      content: { 'application/json': { schema: z.object({ data: z.array(MealDetailSchema) }) } },
     },
   },
 });
@@ -78,7 +134,7 @@ registry.registerPath({
   responses: {
     200: {
       description: 'The requested meal',
-      content: { 'application/json': { schema: z.object({ data: MealSchema }) } },
+      content: { 'application/json': { schema: z.object({ data: MealDetailSchema }) } },
     },
     400: {
       description: 'Invalid UUID format',

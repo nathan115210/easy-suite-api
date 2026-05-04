@@ -24,12 +24,6 @@ pnpm dev:api easy-meal-api
 
 This starts the local PostgreSQL container and then starts the selected API app. The runner accepts either the app package name or the app directory name. Package name is preferred because it matches pnpm workspace filtering.
 
-If the local services are already running and you only want to start the app process, use:
-
-```bash
-pnpm dev:app easy-meal-api
-```
-
 Do not add one-off root scripts like:
 
 ```json

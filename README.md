@@ -70,7 +70,6 @@ Useful local URLs:
 
 ```bash
 pnpm dev
-pnpm dev:app easy-meal-api
 pnpm dev:api easy-meal-api
 pnpm ci:local
 pnpm build

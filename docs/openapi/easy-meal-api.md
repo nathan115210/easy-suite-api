@@ -19,7 +19,21 @@ Returns meals. Results can be searched by title, filtered by difficulty or cook 
 | `cookTime`   | string | `any`, `under_15`, `under_30`, `under_45`, `under_60`, `over_60` | Filter by cook time bucket                   |
 | `sort`       | string | `created_desc`, `created_asc`, `cook_time_asc`, `cook_time_desc` | Sort returned meals                          |
 
-Example:
+Search by keyword:
+
+Use `q` to search meal titles.
+
+```http
+GET /v1/meals?q=pasta
+```
+
+With URL-encoded spaces:
+
+```http
+GET /v1/meals?q=tomato%20pasta
+```
+
+Search can be combined with filters and sorting:
 
 ```http
 GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
@@ -38,13 +52,34 @@ GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
       "description": "string",
       "cookTime": 30,
       "difficulty": "easy | medium | hard",
-      "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"]
+      "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+      "ingredients": [
+        {
+          "text": "string",
+          "amount": "string",
+          "sort_order": 0
+        }
+      ],
+      "instructions": [
+        {
+          "text": "string",
+          "image": "string | null",
+          "sort_order": 0
+        }
+      ],
+      "nutrition": {
+        "calories": 500,
+        "protein": 30,
+        "carbs": 60,
+        "fat": 15
+      }
     }
   ]
 }
 ```
 
 `mealType` is returned as a JSON array when assigned, for example `["dinner"]`. It is `null` when no meal types are assigned.
+`ingredients` and `instructions` are ordered by `sort_order`. `ingredients`, `instructions`, and `nutrition` are `null` when no related data is available.
 
 ---
 
@@ -70,10 +105,32 @@ Returns a single meal by UUID.
     "description": "string",
     "cookTime": 30,
     "difficulty": "easy | medium | hard",
-    "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"]
+    "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+    "ingredients": [
+      {
+        "text": "string",
+        "amount": "string",
+        "sort_order": 0
+      }
+    ],
+    "instructions": [
+      {
+        "text": "string",
+        "image": "string | null",
+        "sort_order": 0
+      }
+    ],
+    "nutrition": {
+      "calories": 500,
+      "protein": 30,
+      "carbs": 60,
+      "fat": 15
+    }
   }
 }
 ```
+
+`ingredients` and `instructions` are ordered by `sort_order`. `ingredients`, `instructions`, and `nutrition` are `null` when no related data is available.
 
 **Response `400`** — `id` is not a valid UUID
 

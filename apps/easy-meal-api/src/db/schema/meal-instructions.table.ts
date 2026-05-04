@@ -1,7 +1,7 @@
 import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { mealsTable } from './meals.table';
 
-export const mealInstructions = pgTable(
+export const mealInstructionsTable = pgTable(
   'meal_instructions',
   {
     id: uuid('id').primaryKey().defaultRandom(),

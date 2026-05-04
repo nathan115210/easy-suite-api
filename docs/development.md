@@ -70,7 +70,7 @@ pnpm dev:db:reset
 pnpm dev:api easy-meal-api
 ```
 
-The `dev:api` script starts the local PostgreSQL container, then starts one API app by package name or app directory name. Use `pnpm dev:app <app>` only when the supporting local services are already running.
+The `dev:api` script starts the local PostgreSQL container, then starts one API app by package name or app directory name.
 
 Use `pnpm dev` when you want to run every workspace development task through Turborepo.
 
@@ -106,6 +106,12 @@ Then call the meals endpoint with optional search and filter query params:
 curl "http://localhost:8282/v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc"
 ```
 
+Search by keyword only:
+
+```bash
+curl "http://localhost:8282/v1/meals?q=tomato%20pasta"
+```
+
 Supported query params:
 
 | Parameter    | Values                                                           |
@@ -122,7 +128,6 @@ Root scripts are the main entry point:
 | Command              | Purpose                             |
 | -------------------- | ----------------------------------- |
 | `pnpm dev`           | Run workspace development tasks     |
-| `pnpm dev:app <app>` | Run one app development task        |
 | `pnpm dev:api <app>` | Start PostgreSQL and run one API    |
 | `pnpm build`         | Build workspace packages and apps   |
 | `pnpm lint`          | Run ESLint through Turborepo        |
@@ -142,7 +147,7 @@ For app code, start in `apps/easy-meal-api/src`.
 
 For shared helpers that can be reused by multiple apps, use `packages/utils/src`.
 
-For new APIs, create a new directory under `apps/` with its own `package.json`. The package name and directory name are both accepted by `pnpm dev:api` and `pnpm dev:app`, but package name is preferred in docs and examples because it is the workspace identity used by pnpm.
+For new APIs, create a new directory under `apps/` with its own `package.json`. The package name and directory name are both accepted by `pnpm dev:api`, but package name is preferred in docs and examples because it is the workspace identity used by pnpm.
 
 Before committing, run:
 

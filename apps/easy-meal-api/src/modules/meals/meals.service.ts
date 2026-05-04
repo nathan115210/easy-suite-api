@@ -1,8 +1,20 @@
 import { CookTimeValue, DifficultyLevel, MealType } from '../../../easy-meal-api.types';
 import { db } from '../../db';
-import { mealsTable, mealTypesTable } from '../../db/schema';
+import {
+  mealsTable,
+  mealTypesTable,
+  mealIngredientsTable,
+  mealInstructionsTable,
+  mealNutritionTable,
+} from '../../db/schema';
 import { searchByKeywordCondition } from '../../utils/searchByKeyword';
-import type { Meal } from './meals.schema';
+import type {
+  Meal,
+  MealDetail,
+  MealIngredient,
+  MealInstruction,
+  MealNutrition,
+} from './meals.schema';
 import { and, asc, desc, eq, gt, lte, sql, type SQL } from 'drizzle-orm';
 
 type MealTypeResponse = Exclude<MealType, MealType.Any>;
@@ -20,7 +32,7 @@ export type MealSearchQuery = {
   sort?: MealSearchQuerySortOption;
 };
 
-export async function getAllMeals(query: MealSearchQuery = {}): Promise<Meal[]> {
+export async function getAllMeals(query: MealSearchQuery = {}): Promise<MealDetail[]> {
   const filters: SQL[] = [];
 
   const searchFilter = query.q
@@ -91,10 +103,77 @@ export async function getAllMeals(query: MealSearchQuery = {}): Promise<Meal[]> 
     mealsQuery = mealsQuery.where(whereClause);
   }
 
-  return mealsQuery.orderBy(orderBy);
+  const meals = await mealsQuery.orderBy(orderBy);
+
+  return Promise.all(meals.map((meal) => getMealWithDetails(meal)));
 }
 
-export async function getMealById(id: string): Promise<Meal | null> {
+async function getIngredientsByMealId(mealId: string): Promise<MealIngredient[] | null> {
+  return db
+    .select({
+      text: mealIngredientsTable.text,
+      amount: mealIngredientsTable.amount,
+      sort_order: mealIngredientsTable.sortOrder,
+    })
+    .from(mealIngredientsTable)
+    .where(eq(mealIngredientsTable.mealId, mealId))
+    .then((rows) => {
+      if (rows.length === 0) {
+        return null;
+      }
+
+      // Sort ingredients by sort_order before returning
+      return rows.sort((a, b) => a.sort_order - b.sort_order);
+    });
+}
+
+async function getInstructionsByMealId(mealId: string): Promise<MealInstruction[] | null> {
+  return db
+    .select({
+      text: mealInstructionsTable.text,
+      image: mealInstructionsTable.image,
+      sort_order: mealInstructionsTable.sortOrder,
+    })
+    .from(mealInstructionsTable)
+    .where(eq(mealInstructionsTable.mealId, mealId))
+    .then((rows) => {
+      if (rows.length === 0) {
+        return null;
+      }
+
+      // Sort instructions by sort_order before returning
+      return rows.sort((a, b) => a.sort_order - b.sort_order);
+    });
+}
+
+async function getNutritionByMealId(mealId: string): Promise<MealNutrition | null> {
+  return db
+    .select({
+      calories: mealNutritionTable.calories,
+      protein: mealNutritionTable.protein,
+      carbs: mealNutritionTable.carbs,
+      fat: mealNutritionTable.fat,
+    })
+    .from(mealNutritionTable)
+    .where(eq(mealNutritionTable.mealId, mealId))
+    .then(([nutrition]) => nutrition || null);
+}
+
+async function getMealWithDetails(meal: Meal): Promise<MealDetail> {
+  const ingredientsData = await getIngredientsByMealId(meal.id);
+  const instructionsData = await getInstructionsByMealId(meal.id);
+  const nutritionData = await getNutritionByMealId(meal.id);
+
+  return {
+    ...meal,
+    mealType: meal.mealType ?? null,
+    ingredients: ingredientsData,
+    instructions: instructionsData,
+    nutrition: nutritionData,
+  };
+}
+
+export async function getMealById(id: string): Promise<MealDetail | null> {
   return db
     .select({
       id: mealsTable.id,
@@ -122,5 +201,11 @@ export async function getMealById(id: string): Promise<Meal | null> {
       mealsTable.difficulty,
     )
     .limit(1)
-    .then(([meal]) => meal ?? null);
+    .then(async ([meal]) => {
+      if (!meal) {
+        return null;
+      }
+
+      return getMealWithDetails(meal);
+    });
 }

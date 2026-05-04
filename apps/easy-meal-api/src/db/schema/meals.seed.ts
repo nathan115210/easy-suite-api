@@ -2,10 +2,10 @@ import { inArray } from 'drizzle-orm';
 import type { DifficultyLevel, Meal } from '../../../easy-meal-api.types';
 import { DifficultyLevel as DifficultyLevelValue, MealType } from '../../../easy-meal-api.types';
 import type { db } from '../index';
-import { mealIngredients } from './meal-ingredients.table';
-import { mealInstructions } from './meal-instructions.table';
+import { mealIngredientsTable } from './meal-ingredients.table';
+import { mealInstructionsTable } from './meal-instructions.table';
 import { mealTypesTable } from './meal-types.table';
-import { mealNutrition } from './meal-nutrition.table';
+import { mealNutritionTable } from './meal-nutrition.table';
 import { mealsTable } from './meals.table';
 import { mealTags, tags as tagsTable } from './tags.table';
 
@@ -853,7 +853,7 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
       }
 
       if (meal.nutritionInfo) {
-        await tx.insert(mealNutrition).values({
+        await tx.insert(mealNutritionTable).values({
           mealId: createdMeal.id,
           calories: meal.nutritionInfo.calories,
           protein: meal.nutritionInfo.protein,
@@ -863,7 +863,7 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
       }
 
       if (meal.ingredients.length > 0) {
-        await tx.insert(mealIngredients).values(
+        await tx.insert(mealIngredientsTable).values(
           meal.ingredients.map((ingredient, index) => ({
             mealId: createdMeal.id,
             text: ingredient.text,
@@ -874,7 +874,7 @@ export async function seedMeals(database: SeedDatabase): Promise<SeedMealsResult
       }
 
       if (meal.instructions.length > 0) {
-        await tx.insert(mealInstructions).values(
+        await tx.insert(mealInstructionsTable).values(
           meal.instructions.map((instruction) => ({
             mealId: createdMeal.id,
             image: instruction.image,
