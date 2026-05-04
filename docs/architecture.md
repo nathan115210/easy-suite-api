@@ -93,9 +93,3 @@ pnpm dev:api <app-package-name>
 ```
 
 This command discovers apps from `apps/*/package.json`, starts the shared local PostgreSQL container, and delegates to `pnpm --filter <package> dev`. This keeps the root `package.json` stable as more APIs are added.
-
-For running only the app process, use:
-
-```bash
-pnpm dev:app <app-package-name>
-```

@@ -39,6 +39,7 @@ export interface NutritionInfo {
 }
 
 export enum MealType {
+  Any = 'any',
   Breakfast = 'breakfast',
   Lunch = 'lunch',
   Dinner = 'dinner',

@@ -8,6 +8,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const difficultyLevelEnum = pgEnum('difficulty_level', ['easy', 'medium', 'hard']);
 export const mealsTable = pgTable(
@@ -41,7 +42,7 @@ export const mealsTable = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index('meals_slug_idx').on(table.slug),
+    index('meals_title_fts_idx').using('gin', sql`to_tsvector('english', ${table.title})`),
     index('meals_difficulty_idx').on(table.difficulty),
     index('meals_cook_time_idx').on(table.cookTime),
     index('meals_created_at_idx').on(table.createdAt),

@@ -8,7 +8,36 @@ Interactive docs are available at `http://localhost:8282/docs` when the API is r
 
 #### `GET /v1/meals`
 
-Returns all meals.
+Returns meals. Results can be searched by title, filtered by difficulty or cook time, and sorted.
+
+**Query parameters**
+
+| Parameter    | Type   | Values                                                           | Description                                  |
+| ------------ | ------ | ---------------------------------------------------------------- | -------------------------------------------- |
+| `q`          | string | Any search text                                                  | Full-text search against meal titles         |
+| `difficulty` | string | `any`, `easy`, `medium`, `hard`                                  | Filter by difficulty; `any` skips the filter |
+| `cookTime`   | string | `any`, `under_15`, `under_30`, `under_45`, `under_60`, `over_60` | Filter by cook time bucket                   |
+| `sort`       | string | `created_desc`, `created_asc`, `cook_time_asc`, `cook_time_desc` | Sort returned meals                          |
+
+Search by keyword:
+
+Use `q` to search meal titles.
+
+```http
+GET /v1/meals?q=pasta
+```
+
+With URL-encoded spaces:
+
+```http
+GET /v1/meals?q=tomato%20pasta
+```
+
+Search can be combined with filters and sorting:
+
+```http
+GET /v1/meals?q=pasta&difficulty=easy&cookTime=under_30&sort=created_desc
+```
 
 **Response `200`**
 
@@ -22,11 +51,35 @@ Returns all meals.
       "image": "string",
       "description": "string",
       "cookTime": 30,
-      "difficulty": "easy | medium | hard"
+      "difficulty": "easy | medium | hard",
+      "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+      "ingredients": [
+        {
+          "text": "string",
+          "amount": "string",
+          "sort_order": 0
+        }
+      ],
+      "instructions": [
+        {
+          "text": "string",
+          "image": "string | null",
+          "sort_order": 0
+        }
+      ],
+      "nutrition": {
+        "calories": 500,
+        "protein": 30,
+        "carbs": 60,
+        "fat": 15
+      }
     }
   ]
 }
 ```
+
+`mealType` is returned as a JSON array when assigned, for example `["dinner"]`. It is `null` when no meal types are assigned.
+`ingredients` and `instructions` are ordered by `sort_order`. `ingredients`, `instructions`, and `nutrition` are `null` when no related data is available.
 
 ---
 
@@ -51,10 +104,33 @@ Returns a single meal by UUID.
     "image": "string",
     "description": "string",
     "cookTime": 30,
-    "difficulty": "easy | medium | hard"
+    "difficulty": "easy | medium | hard",
+    "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+    "ingredients": [
+      {
+        "text": "string",
+        "amount": "string",
+        "sort_order": 0
+      }
+    ],
+    "instructions": [
+      {
+        "text": "string",
+        "image": "string | null",
+        "sort_order": 0
+      }
+    ],
+    "nutrition": {
+      "calories": 500,
+      "protein": 30,
+      "carbs": 60,
+      "fat": 15
+    }
   }
 }
 ```
+
+`ingredients` and `instructions` are ordered by `sort_order`. `ingredients`, `instructions`, and `nutrition` are `null` when no related data is available.
 
 **Response `400`** — `id` is not a valid UUID
 
@@ -63,6 +139,70 @@ Returns a single meal by UUID.
   "error": {
     "code": "INVALID_UUID",
     "message": "string"
+  }
+}
+```
+
+**Response `404`** — meal not found
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Meal not found"
+  }
+}
+```
+
+---
+
+#### `PUT /v1/meals/{id}`
+
+Partially updates a meal by UUID. Only the fields included in the request body are changed. When `title` is updated, `slug` is automatically re-derived from the new title.
+
+**Path parameters**
+
+| Parameter | Type | Description     |
+| --------- | ---- | --------------- |
+| `id`      | UUID | Meal identifier |
+
+**Request body** _(all fields optional)_
+
+```json
+{
+  "title": "string",
+  "image": "string",
+  "description": "string",
+  "cookTime": 30,
+  "difficulty": "easy | medium | hard | null",
+  "mealType": ["breakfast | lunch | dinner | snacks | dessert | drinks"],
+  "ingredients": [{ "text": "string", "amount": "string", "sort_order": 0 }],
+  "instructions": [{ "text": "string", "image": "string | null", "sort_order": 0 }],
+  "nutrition": {
+    "calories": 500,
+    "protein": 30,
+    "carbs": 60,
+    "fat": 15
+  }
+}
+```
+
+- Omitting a field leaves that data unchanged.
+- Setting `mealType`, `ingredients`, `instructions`, or `nutrition` to `null` clears that related data.
+- `sort_order` values must be unique within `ingredients` and within `instructions`.
+
+**Response `200`**
+
+Returns the full updated `MealDetail` object (same shape as `GET /v1/meals/{id}`).
+
+**Response `400`** — invalid UUID or request body
+
+```json
+{
+  "error": {
+    "code": "INVALID_BODY | INVALID_ID | DUPLICATE_SORT_ORDER",
+    "message": "string",
+    "details": []
   }
 }
 ```
