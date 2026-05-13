@@ -25,6 +25,70 @@ Response:
 }
 ```
 
+## Auth Sessions
+
+```http
+POST /v1/auth-sessions/signup
+```
+
+Registers a new user and creates an authenticated session. On success, an `authSessionId` cookie is set automatically.
+
+**Request body:**
+
+| Field      | Type   | Required | Constraints        |
+| ---------- | ------ | -------- | ------------------ |
+| `username` | string | Yes      | 3–30 characters    |
+| `email`    | string | Yes      | Valid email format |
+| `password` | string | Yes      | 6–50 characters    |
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+**Response `201`:**
+
+```json
+{
+  "message": "User created successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+Also sets an `authSessionId` HTTP-only cookie (expires in 7 days) used for subsequent authenticated requests.
+
+**Response `400`** — invalid request body:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `409`** — email or username already taken:
+
+```json
+{
+  "error": {
+    "code": "EMAIL_ALREADY_IN_USE | USERNAME_ALREADY_IN_USE",
+    "message": "string"
+  }
+}
+```
+
 ## Meals
 
 ```http

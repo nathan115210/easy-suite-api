@@ -1,0 +1,75 @@
+import { AppError } from '@easy-suite/utils';
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  password: string;
+}
+
+export type PublicUserData = Omit<User, 'password'>;
+
+export const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+export const AUTH_SESSION_COOKIE_NAME = 'authSessionId';
+export const AUTH_SESSION_HEADER_NAME = 'x-auth-session-id';
+export const AUTH_SESSION_RESPONSE_KEY = 'authSessionId';
+export const AUTHORIZATION_SCHEME = 'Bearer';
+
+export enum AuthErrorType {
+  EMAIL_ALREADY_IN_USE = 'EMAIL_ALREADY_IN_USE',
+  USERNAME_ALREADY_IN_USE = 'USERNAME_ALREADY_IN_USE',
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  SESSION_MISSING = 'SESSION_MISSING',
+  SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
+  SESSION_EXPIRED = 'SESSION_EXPIRED',
+  INVALID_USERNAME = 'INVALID_USERNAME',
+  EMAIL_REQUIRED = 'EMAIL_REQUIRED',
+  PASSWORD_REQUIRED = 'PASSWORD_REQUIRED',
+  INVALID_EMAIL = 'INVALID_EMAIL',
+}
+
+// export interface LoginRequestBody {
+//   email?: string;
+//   username?: string;
+//   password: string;
+// }
+
+export type ErrorResponseBody = {
+  error: {
+    code: AuthErrorType;
+    message: string;
+    details?: unknown;
+  };
+};
+
+export type SignupResponseBody = {
+  message: string;
+  data: {
+    user: {
+      id: string;
+      username: string;
+      email: string;
+    };
+  };
+};
+
+export class AuthError extends AppError {
+  constructor(statusCode: number, code: AuthErrorType, message: string, details?: unknown) {
+    super(statusCode, code, message, details);
+    this.name = 'AuthError';
+  }
+}
+
+export type AuthSession = {
+  id: string;
+  expiresAt: Date;
+};
+
+export type RegisterUserBody = {
+  username: string;
+  email: string;
+  password: string;
+};

@@ -1,6 +1,6 @@
 import { inArray } from 'drizzle-orm';
-import type { DifficultyLevel, Meal } from '../../../easy-meal-api.types';
-import { DifficultyLevel as DifficultyLevelValue, MealType } from '../../../easy-meal-api.types';
+import type { DifficultyLevel, Meal } from '../../../types/meals.types';
+import { DifficultyLevel as DifficultyLevelValue, MealType } from '../../../types/meals.types';
 import type { db } from '../index';
 import { slugify } from '../../utils/slugify';
 import { mealIngredientsTable } from './meal-ingredients.table';

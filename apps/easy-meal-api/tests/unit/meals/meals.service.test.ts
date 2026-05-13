@@ -1,5 +1,5 @@
 import type { Meal } from '../../../src/modules/meals/meals.schema';
-import { CookTimeValue, DifficultyLevel, MealType } from '../../../easy-meal-api.types';
+import { CookTimeValue, DifficultyLevel, MealType } from '../../../types/meals.types';
 import {
   mealIngredientsTable,
   mealInstructionsTable,

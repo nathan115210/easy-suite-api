@@ -1,4 +1,4 @@
-import { MealType } from '../../../easy-meal-api.types';
+import { MealType } from '../../../types/meals.types';
 import { db } from '../../db';
 import {
   mealsTable,

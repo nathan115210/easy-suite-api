@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Meal } from '../../../src/modules/meals/meals.schema';
-import { MealType } from '../../../easy-meal-api.types';
+import { MealType } from '../../../types/meals.types';
 
 jest.mock('../../../src/modules/meals/meals.service', () => ({
   getAllMeals: jest.fn(),

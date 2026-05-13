@@ -4,6 +4,79 @@ Interactive docs are available at `http://localhost:8282/docs` when the API is r
 
 ## Endpoints
 
+### Auth Sessions
+
+#### `POST /v1/auth-sessions/signup`
+
+Registers a new user and opens an authenticated session. On success, an `authSessionId` HTTP-only cookie is set (TTL 7 days).
+
+**Request body**
+
+| Field      | Type   | Required | Constraints        |
+| ---------- | ------ | -------- | ------------------ |
+| `username` | string | Yes      | 3–30 characters    |
+| `email`    | string | Yes      | Valid email format |
+| `password` | string | Yes      | 6–50 characters    |
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+**Response `201`**
+
+```json
+{
+  "message": "User created successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+**Response `400`** — validation failure
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `409`** — duplicate email or username
+
+```json
+{
+  "error": {
+    "code": "EMAIL_ALREADY_IN_USE | USERNAME_ALREADY_IN_USE",
+    "message": "string"
+  }
+}
+```
+
+**Response `500`** — internal server error
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Internal Server Error"
+  }
+}
+```
+
+---
+
 ### Meals
 
 #### `GET /v1/meals`
