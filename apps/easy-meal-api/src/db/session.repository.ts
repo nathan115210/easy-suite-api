@@ -2,6 +2,8 @@ import { and, eq, gt, lt } from 'drizzle-orm';
 import { userSessionsTable } from './schema';
 import { db } from './index';
 
+type DbExecutor = Pick<typeof db, 'insert'>;
+
 type CreatedSession = {
   id: string;
   userId: string;
@@ -10,9 +12,12 @@ type CreatedSession = {
 };
 
 export const sessionRepository = {
-  async createSession(sessionData: { userId: string; expiresAt: Date }): Promise<CreatedSession> {
+  async createSession(
+    sessionData: { userId: string; expiresAt: Date },
+    executor: DbExecutor = db,
+  ): Promise<CreatedSession> {
     const { userId, expiresAt } = sessionData;
-    const [createdSession] = await db
+    const [createdSession] = await executor
       .insert(userSessionsTable)
       .values({
         userId,

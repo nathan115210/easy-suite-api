@@ -10,6 +10,7 @@ import {
 import { hashPassword, toPublicUser, verifyPassword } from '../../../utils/auth-utils';
 import { userRepository } from '../../../db/user.repository';
 import { sessionRepository } from '../../../db/session.repository';
+import { db } from '../../../db';
 
 type UserAuthServiceResult = {
   message: string;
@@ -52,16 +53,27 @@ const signup = async (userData: RegisterUserBody): Promise<UserAuthSessionServic
   }
 
   try {
-    const createdUser = await userRepository.create({
-      username,
-      email,
-      passwordHash,
-    });
-
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-    const session = await sessionRepository.createSession({
-      userId: createdUser.id,
-      expiresAt,
+
+    const { createdUser, session } = await db.transaction(async (tx) => {
+      const createdUser = await userRepository.create(
+        {
+          username,
+          email,
+          passwordHash,
+        },
+        tx,
+      );
+
+      const session = await sessionRepository.createSession(
+        {
+          userId: createdUser.id,
+          expiresAt,
+        },
+        tx,
+      );
+
+      return { createdUser, session };
     });
 
     return {

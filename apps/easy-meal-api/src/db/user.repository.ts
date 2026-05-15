@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 import { usersTable } from './schema/user.table';
 import { db } from './index';
 
+type DbExecutor = Pick<typeof db, 'insert'>;
+
 type CreatedUser = {
   id: string;
   username: string;
@@ -27,8 +29,11 @@ export const userRepository = {
     return user ?? null;
   },
 
-  async create(userData: Omit<typeof usersTable.$inferInsert, 'id'>): Promise<CreatedUser> {
-    const [createdUser] = await db.insert(usersTable).values(userData).returning({
+  async create(
+    userData: Omit<typeof usersTable.$inferInsert, 'id'>,
+    executor: DbExecutor = db,
+  ): Promise<CreatedUser> {
+    const [createdUser] = await executor.insert(usersTable).values(userData).returning({
       id: usersTable.id,
       username: usersTable.username,
       email: usersTable.email,

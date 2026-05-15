@@ -15,6 +15,14 @@ jest.mock('../../../src/db/session.repository', () => ({
   },
 }));
 
+const mockDbTransaction = jest.fn(async (callback: (tx: unknown) => unknown) => callback({}));
+
+jest.mock('../../../src/db/index', () => ({
+  db: {
+    transaction: mockDbTransaction,
+  },
+}));
+
 jest.mock('../../../src/utils/auth-utils', () => ({
   hashPassword: jest.fn(),
   verifyPassword: jest.fn(),
@@ -91,6 +99,7 @@ describe('authSessionsService.signup', () => {
     expect(mockHashPassword).toHaveBeenCalledWith(validUserData.password);
     expect(mockCreateUser).toHaveBeenCalledWith(
       expect.objectContaining({ passwordHash: 'hashed_password' }),
+      expect.any(Object),
     );
   });
 
@@ -99,7 +108,14 @@ describe('authSessionsService.signup', () => {
 
     expect(mockCreateSession).toHaveBeenCalledWith(
       expect.objectContaining({ userId: mockCreatedUser.id }),
+      expect.any(Object),
     );
+  });
+
+  it('wraps user and session creation in a transaction', async () => {
+    await authSessionsService.signup(validUserData);
+
+    expect(mockDbTransaction).toHaveBeenCalledTimes(1);
   });
 
   it('creates a session with a future expiry date', async () => {
