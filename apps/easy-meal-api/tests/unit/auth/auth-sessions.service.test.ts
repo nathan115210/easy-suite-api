@@ -38,7 +38,7 @@ const mockVerifyPassword = verifyPassword as jest.Mock;
 const validUserData = {
   username: 'testuser',
   email: 'test@example.com',
-  password: 'password123',
+  password: 'Password1',
 };
 
 const mockCreatedUser = {
@@ -214,6 +214,19 @@ describe('authSessionsService.signup', () => {
       statusCode: 500,
       code: AuthErrorType.DATABASE_ERROR,
     });
+  });
+
+  it('throws PASSWORD_HASH_FAILED when hashPassword throws', async () => {
+    mockHashPassword.mockRejectedValue(new Error('Argon2 failure'));
+
+    await expect(authSessionsService.signup(validUserData)).rejects.toMatchObject({
+      statusCode: 500,
+      code: AuthErrorType.PASSWORD_HASH_FAILED,
+      message: 'Failed to process password',
+    });
+
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockCreateSession).not.toHaveBeenCalled();
   });
 
   it('throws an AuthError instance for all error cases', async () => {

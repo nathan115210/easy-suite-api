@@ -1,12 +1,18 @@
 import { z } from 'zod';
 import { registry } from '../../../openapi/registry';
+import { USERNAME_MIN_LENGTH, USERNAME_MIN_LENGTH_MESSAGE } from '../../../../types/auth.types';
 
 export const SignupRequestSchema = registry.register(
   'SignupRequest',
   z.object({
-    username: z.string().min(3).max(30),
+    username: z.string().min(USERNAME_MIN_LENGTH, { message: USERNAME_MIN_LENGTH_MESSAGE }).max(30),
     email: z.email(),
-    password: z.string().min(6).max(50),
+    password: z
+      .string()
+      .min(1, { message: 'Password is required' })
+      .min(3, { message: 'Password must be at least 3 characters long' })
+      .regex(/[A-Z]/, { message: 'Password must contain at least 1 uppercase letter' })
+      .regex(/\d/, { message: 'Password must contain at least 1 number' }),
   }),
 );
 
@@ -111,7 +117,7 @@ export const SigninRequestSchema = registry.register(
     .object({
       email: z.email().optional(),
       username: z.string().optional(),
-      password: z.string(),
+      password: z.string().min(1, { message: 'Password is required' }),
     })
     .superRefine((data, ctx) => {
       if (!data.email && !data.username) {

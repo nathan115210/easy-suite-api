@@ -12,11 +12,11 @@ Registers a new user and opens an authenticated session. On success, an `authSes
 
 **Request body**
 
-| Field      | Type   | Required | Constraints        |
-| ---------- | ------ | -------- | ------------------ |
-| `username` | string | Yes      | 3–30 characters    |
-| `email`    | string | Yes      | Valid email format |
-| `password` | string | Yes      | 6–50 characters    |
+| Field      | Type   | Required | Constraints                                    |
+| ---------- | ------ | -------- | ---------------------------------------------- |
+| `username` | string | Yes      | 3–30 characters                                |
+| `email`    | string | Yes      | Valid email format                             |
+| `password` | string | Yes      | At least 3 chars, 1 uppercase letter, 1 number |
 
 ```json
 {
@@ -69,8 +69,8 @@ Registers a new user and opens an authenticated session. On success, an `authSes
 ```json
 {
   "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Internal Server Error"
+    "code": "PASSWORD_HASH_FAILED | DATABASE_ERROR | INTERNAL_ERROR",
+    "message": "string"
   }
 }
 ```

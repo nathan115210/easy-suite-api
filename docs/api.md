@@ -35,11 +35,11 @@ Registers a new user and creates an authenticated session. On success, an `authS
 
 **Request body:**
 
-| Field      | Type   | Required | Constraints        |
-| ---------- | ------ | -------- | ------------------ |
-| `username` | string | Yes      | 3–30 characters    |
-| `email`    | string | Yes      | Valid email format |
-| `password` | string | Yes      | 6–50 characters    |
+| Field      | Type   | Required | Constraints                                    |
+| ---------- | ------ | -------- | ---------------------------------------------- |
+| `username` | string | Yes      | 3–30 characters                                |
+| `email`    | string | Yes      | Valid email format                             |
+| `password` | string | Yes      | At least 3 chars, 1 uppercase letter, 1 number |
 
 ```json
 {
@@ -84,6 +84,17 @@ Also sets an `authSessionId` HTTP-only cookie (expires in 7 days) used for subse
 {
   "error": {
     "code": "EMAIL_ALREADY_IN_USE | USERNAME_ALREADY_IN_USE",
+    "message": "string"
+  }
+}
+```
+
+**Response `500`** — password processing or database failure:
+
+```json
+{
+  "error": {
+    "code": "PASSWORD_HASH_FAILED | DATABASE_ERROR | INTERNAL_ERROR",
     "message": "string"
   }
 }

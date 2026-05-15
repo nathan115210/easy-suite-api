@@ -3,8 +3,11 @@ import {
   type AuthSession,
   AuthError,
   AuthErrorType,
+  RegisterUserBody,
   SESSION_DURATION_MS,
   SigninRequestBody,
+  USERNAME_MIN_LENGTH,
+  USERNAME_MIN_LENGTH_MESSAGE,
 } from '../../../../types/auth.types';
 import { isValidEmail, hashPassword, verifyPassword } from '../../../utils/auth-utils';
 import { userRepository } from '../../../db/user.repository';
@@ -19,15 +22,21 @@ type UserAuthSessionServiceResult = UserAuthServiceResult & {
   session: AuthSession;
 };
 
-const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthSessionServiceResult> => {
+type DbErrorLike = {
+  code?: string;
+  constraint?: string;
+  detail?: string;
+};
+
+function isUniqueViolation(error: unknown): error is DbErrorLike {
+  return typeof error === 'object' && error !== null && (error as DbErrorLike).code === '23505';
+}
+
+const signup = async (userData: RegisterUserBody): Promise<UserAuthSessionServiceResult> => {
   const { username, email, password } = userData;
 
-  if (!username || typeof username !== 'string' || username.trim().length < 3) {
-    throw new AuthError(
-      400,
-      AuthErrorType.INVALID_USERNAME,
-      'Username must be at least 3 characters',
-    );
+  if (!username || typeof username !== 'string' || username.trim().length < USERNAME_MIN_LENGTH) {
+    throw new AuthError(400, AuthErrorType.INVALID_USERNAME, USERNAME_MIN_LENGTH_MESSAGE);
   }
 
   if (!isValidEmail(email)) {
@@ -51,8 +60,15 @@ const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthSessionServic
     throw new AuthError(409, AuthErrorType.USERNAME_ALREADY_IN_USE, 'Username is already in use');
   }
 
+  let passwordHash: string;
   try {
-    const passwordHash = await hashPassword(password);
+    passwordHash = await hashPassword(password);
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    throw new AuthError(500, AuthErrorType.PASSWORD_HASH_FAILED, 'Failed to process password');
+  }
+
+  try {
     const createdUser = await userRepository.create({
       username,
       email,
@@ -71,6 +87,20 @@ const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthSessionServic
       session,
     };
   } catch (error) {
+    if (isUniqueViolation(error)) {
+      const constraint = error.constraint?.toLowerCase() ?? '';
+      const detail = error.detail?.toLowerCase() ?? '';
+      const isEmailConflict = constraint.includes('email') || detail.includes('(email)');
+
+      throw new AuthError(
+        409,
+        isEmailConflict
+          ? AuthErrorType.EMAIL_ALREADY_IN_USE
+          : AuthErrorType.USERNAME_ALREADY_IN_USE,
+        isEmailConflict ? 'Email is already in use' : 'Username is already in use',
+      );
+    }
+
     console.error('Error creating user:', error);
     throw new AuthError(500, AuthErrorType.DATABASE_ERROR, 'Failed to create user');
   }

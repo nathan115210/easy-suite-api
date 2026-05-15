@@ -23,8 +23,11 @@ export const AUTH_SESSION_COOKIE_NAME = 'authSessionId';
 export const AUTH_SESSION_HEADER_NAME = 'x-auth-session-id';
 export const AUTH_SESSION_RESPONSE_KEY = 'authSessionId';
 export const AUTHORIZATION_SCHEME = 'Bearer';
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MIN_LENGTH_MESSAGE = 'Username must be at least 3 characters';
 
 export enum AuthErrorType {
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
   EMAIL_ALREADY_IN_USE = 'EMAIL_ALREADY_IN_USE',
   USERNAME_ALREADY_IN_USE = 'USERNAME_ALREADY_IN_USE',
   USER_NOT_FOUND = 'USER_NOT_FOUND',
@@ -38,6 +41,7 @@ export enum AuthErrorType {
   EMAIL_REQUIRED = 'EMAIL_REQUIRED',
   PASSWORD_REQUIRED = 'PASSWORD_REQUIRED',
   INVALID_EMAIL = 'INVALID_EMAIL',
+  PASSWORD_HASH_FAILED = 'PASSWORD_HASH_FAILED',
 }
 
 export type ErrorResponseBody = {

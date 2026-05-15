@@ -7,13 +7,7 @@ export function isValidEmail(email?: string): boolean {
 }
 
 export function isStrongPassword(password: string): boolean {
-  return (
-    password.length >= 8 &&
-    /[a-z]/.test(password) &&
-    /[A-Z]/.test(password) &&
-    /\d/.test(password) &&
-    /[^A-Za-z0-9]/.test(password)
-  );
+  return password.length >= 3 && /[A-Z]/.test(password) && /\d/.test(password);
 }
 
 export const hashPassword = async (password: string): Promise<string> =>

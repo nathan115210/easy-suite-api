@@ -93,14 +93,13 @@ export async function getProfileController(
 ): Promise<void> {
   try {
     const userId = req.userId;
-    console.log('Getting profile for userId:', userId); //TODO: remove before commit --- IGNORE ---
     if (!userId) {
       throw new AuthError(401, AuthErrorType.SESSION_MISSING, 'Authentication session is missing');
     }
 
     const user = await authSessionsService.getUserProfile(userId);
 
-    res.status(req.statusCode || 200).json({
+    res.status(200).json({
       message: user.message,
       data: {
         user: user.user,

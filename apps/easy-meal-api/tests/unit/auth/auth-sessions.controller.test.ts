@@ -34,7 +34,7 @@ const mockAuthLimiter = authLimiter as unknown as jest.Mock;
 const validBody = {
   username: 'testuser',
   email: 'test@example.com',
-  password: 'password123',
+  password: 'Password1',
 };
 
 const mockUser = {
