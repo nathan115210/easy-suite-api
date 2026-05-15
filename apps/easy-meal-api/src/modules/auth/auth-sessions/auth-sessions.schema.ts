@@ -24,39 +24,6 @@ export const SignupResponseSchema = registry.register(
   }),
 );
 
-export const SigninResponseSchema = registry.register(
-  'SigninResponse',
-  z.object({
-    message: z.string(),
-    data: z.object({
-      user: z.object({
-        id: z.string(),
-        username: z.string(),
-        email: z.email(),
-      }),
-    }),
-  }),
-);
-
-export const SigninRequestSchema = registry.register(
-  'SigninRequest',
-  z
-    .object({
-      email: z.email().optional(),
-      username: z.string().optional(),
-      password: z.string(),
-    })
-    .superRefine((data, ctx) => {
-      if (!data.email && !data.username) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Either email or username is required',
-          path: ['email'],
-        });
-      }
-    }),
-);
-
 registry.registerPath({
   method: 'post',
   path: '/v1/auth-sessions/signup',
@@ -124,6 +91,39 @@ registry.registerPath({
   },
 });
 
+export const SigninResponseSchema = registry.register(
+  'SigninResponse',
+  z.object({
+    message: z.string(),
+    data: z.object({
+      user: z.object({
+        id: z.string(),
+        username: z.string(),
+        email: z.email(),
+      }),
+    }),
+  }),
+);
+
+export const SigninRequestSchema = registry.register(
+  'SigninRequest',
+  z
+    .object({
+      email: z.email().optional(),
+      username: z.string().optional(),
+      password: z.string(),
+    })
+    .superRefine((data, ctx) => {
+      if (!data.email && !data.username) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Either email or username is required',
+          path: ['email'],
+        });
+      }
+    }),
+);
+
 registry.registerPath({
   method: 'post',
   path: '/v1/auth-sessions/signin',
@@ -164,6 +164,76 @@ registry.registerPath({
     },
     '401': {
       description: 'Invalid credentials',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.string(),
+              message: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+    '500': {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.string(),
+              message: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+  },
+});
+
+export const ProfileResponseSchema = registry.register(
+  'ProfileResponse',
+  z.object({
+    message: z.string(),
+    data: z.object({
+      user: z.object({
+        id: z.string(),
+        username: z.string(),
+        email: z.email(),
+      }),
+    }),
+  }),
+);
+
+registry.registerPath({
+  method: 'get',
+  path: '/v1/auth-sessions/profile',
+  summary: 'Get authenticated user profile',
+  tags: ['Auth Sessions'],
+  responses: {
+    '200': {
+      description: 'User profile retrieved successfully',
+      content: {
+        'application/json': {
+          schema: ProfileResponseSchema,
+        },
+      },
+    },
+    '401': {
+      description: 'Authentication session missing or invalid',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.string(),
+              message: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+    '404': {
+      description: 'User not found',
       content: {
         'application/json': {
           schema: z.object({

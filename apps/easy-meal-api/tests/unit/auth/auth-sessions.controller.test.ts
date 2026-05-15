@@ -10,6 +10,7 @@ jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () =>
   authSessionsService: {
     signup: jest.fn(),
     signin: jest.fn(),
+    getUserProfile: jest.fn(),
   },
 }));
 
@@ -22,10 +23,12 @@ import { authLimiter } from '../../../src/middlewares/auth/auth-limiter';
 import {
   signupController,
   signinController,
+  getProfileController,
 } from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
 
 const mockSignup = authSessionsService.signup as jest.Mock;
 const mockSignin = authSessionsService.signin as jest.Mock;
+const mockGetUserProfile = authSessionsService.getUserProfile as jest.Mock;
 const mockAuthLimiter = authLimiter as unknown as jest.Mock;
 
 const validBody = {
@@ -429,5 +432,67 @@ describe('signinController', () => {
 
     expect(res.status).toHaveBeenCalledWith(429);
     expect(mockSignin).not.toHaveBeenCalled();
+  });
+});
+
+describe('getProfileController', () => {
+  const userId = '550e8400-e29b-41d4-a716-446655440000';
+
+  beforeEach(() => {
+    mockGetUserProfile.mockResolvedValue({
+      message: 'User profile retrieved successfully',
+      user: mockUser,
+    });
+  });
+
+  it('returns 200 with user data when userId is present on request', async () => {
+    const req = { userId } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await getProfileController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'User profile retrieved successfully',
+      data: { user: mockUser },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('passes userId from request to the service', async () => {
+    const req = { userId } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await getProfileController(req, res, next);
+
+    expect(mockGetUserProfile).toHaveBeenCalledWith(userId);
+  });
+
+  it('calls next() with SESSION_MISSING error when userId is not on request', async () => {
+    const req = {} as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await getProfileController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'SESSION_MISSING', statusCode: 401 }),
+    );
+    expect(mockGetUserProfile).not.toHaveBeenCalled();
+  });
+
+  it('calls next() with the error when the service throws', async () => {
+    const error = new Error('Service failure');
+    mockGetUserProfile.mockRejectedValue(error);
+    const req = { userId } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await getProfileController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
   });
 });

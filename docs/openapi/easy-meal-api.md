@@ -154,6 +154,64 @@ Each successful signin creates a new session with a new `expiresAt`. Existing va
 }
 ```
 
+#### `GET /v1/auth-sessions/profile`
+
+Returns the current authenticated user's profile.
+
+Authentication is required via the `authSessionId` cookie (set by signup/signin).
+
+**Request body**
+
+None.
+
+**Response `200`**
+
+```json
+{
+  "message": "User profile retrieved successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+**Response `401`** — session missing or invalid
+
+```json
+{
+  "error": {
+    "code": "SESSION_MISSING | SESSION_NOT_FOUND",
+    "message": "string"
+  }
+}
+```
+
+**Response `404`** — user not found
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
+**Response `500`** — internal server error
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Internal Server Error"
+  }
+}
+```
+
 ---
 
 ### Meals

@@ -162,6 +162,53 @@ Existing sessions remain valid until they expire or are explicitly deleted.
 }
 ```
 
+```http
+GET /v1/auth-sessions/profile
+```
+
+Returns the current authenticated user's profile.
+
+Authentication is required via `authSessionId` cookie (set by signup/signin).
+
+**Request body:** none
+
+**Response `200`:**
+
+```json
+{
+  "message": "User profile retrieved successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+**Response `401`** — session missing or invalid:
+
+```json
+{
+  "error": {
+    "code": "SESSION_MISSING | SESSION_NOT_FOUND",
+    "message": "string"
+  }
+}
+```
+
+**Response `404`** — user not found:
+
+```json
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User not found"
+  }
+}
+```
+
 ## Meals
 
 ```http

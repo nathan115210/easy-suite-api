@@ -4,6 +4,7 @@ jest.mock('../../../src/db/user.repository', () => ({
   userRepository: {
     findByEmail: jest.fn(),
     findByUsername: jest.fn(),
+    findById: jest.fn(),
     create: jest.fn(),
   },
 }));
@@ -27,6 +28,7 @@ import { authSessionsService } from '../../../src/modules/auth/auth-sessions/aut
 
 const mockFindByEmail = userRepository.findByEmail as jest.Mock;
 const mockFindByUsername = userRepository.findByUsername as jest.Mock;
+const mockFindById = userRepository.findById as jest.Mock;
 const mockCreateUser = userRepository.create as jest.Mock;
 const mockCreateSession = sessionRepository.createSession as jest.Mock;
 const mockIsValidEmail = isValidEmail as jest.Mock;
@@ -351,5 +353,49 @@ describe('authSessionsService.signin', () => {
     await expect(
       authSessionsService.signin({ email: 'unknown@example.com', password: 'password123' }),
     ).rejects.toBeInstanceOf(AuthError);
+  });
+});
+
+describe('authSessionsService.getUserProfile', () => {
+  beforeEach(() => {
+    mockFindById.mockResolvedValue(mockDbUser);
+  });
+
+  it('returns user data and success message on valid userId', async () => {
+    const result = await authSessionsService.getUserProfile(mockDbUser.id);
+
+    expect(result).toEqual({
+      message: 'User profile retrieved successfully',
+      user: { id: mockDbUser.id, username: mockDbUser.username, email: mockDbUser.email },
+    });
+  });
+
+  it('calls findById with the provided userId', async () => {
+    await authSessionsService.getUserProfile(mockDbUser.id);
+
+    expect(mockFindById).toHaveBeenCalledWith(mockDbUser.id);
+  });
+
+  it('does not include passwordHash in the returned user', async () => {
+    const result = await authSessionsService.getUserProfile(mockDbUser.id);
+
+    expect(result.user).not.toHaveProperty('passwordHash');
+  });
+
+  it('throws USER_NOT_FOUND with 404 when user does not exist', async () => {
+    mockFindById.mockResolvedValue(null);
+
+    await expect(authSessionsService.getUserProfile('nonexistent-id')).rejects.toMatchObject({
+      statusCode: 404,
+      code: AuthErrorType.USER_NOT_FOUND,
+    });
+  });
+
+  it('throws an AuthError instance when user is not found', async () => {
+    mockFindById.mockResolvedValue(null);
+
+    await expect(authSessionsService.getUserProfile('nonexistent-id')).rejects.toBeInstanceOf(
+      AuthError,
+    );
   });
 });

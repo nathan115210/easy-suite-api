@@ -13,10 +13,13 @@ import { sessionRepository } from '../../../db/session.repository';
 type UserAuthServiceResult = {
   message: string;
   user: Omit<User, 'password'>;
+};
+
+type UserAuthSessionServiceResult = UserAuthServiceResult & {
   session: AuthSession;
 };
 
-const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthServiceResult> => {
+const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthSessionServiceResult> => {
   const { username, email, password } = userData;
 
   if (!username || typeof username !== 'string' || username.trim().length < 3) {
@@ -73,7 +76,9 @@ const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthServiceResult
   }
 };
 
-const signin = async (userCredentials: SigninRequestBody): Promise<UserAuthServiceResult> => {
+const signin = async (
+  userCredentials: SigninRequestBody,
+): Promise<UserAuthSessionServiceResult> => {
   const { email, username, password } = userCredentials;
 
   if (!email && !username) {
@@ -116,7 +121,24 @@ const signin = async (userCredentials: SigninRequestBody): Promise<UserAuthServi
   };
 };
 
+const getUserProfile = async (userId: string): Promise<UserAuthServiceResult> => {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new AuthError(404, AuthErrorType.USER_NOT_FOUND, 'User not found');
+  }
+
+  return {
+    message: 'User profile retrieved successfully',
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    },
+  };
+};
+
 export const authSessionsService = {
   signup,
   signin,
+  getUserProfile,
 };

@@ -1,5 +1,14 @@
 import { AppError } from '@easy-suite/utils';
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      userId?: string;
+    }
+  }
+}
+
 export interface User {
   id: string;
   username: string;
@@ -30,12 +39,6 @@ export enum AuthErrorType {
   PASSWORD_REQUIRED = 'PASSWORD_REQUIRED',
   INVALID_EMAIL = 'INVALID_EMAIL',
 }
-
-// export interface LoginRequestBody {
-//   email?: string;
-//   username?: string;
-//   password: string;
-// }
 
 export type ErrorResponseBody = {
   error: {

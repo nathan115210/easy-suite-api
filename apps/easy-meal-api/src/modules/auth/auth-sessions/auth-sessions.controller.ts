@@ -7,6 +7,7 @@ import {
   AuthErrorType,
   RegisterUserBody,
   SigninRequestBody,
+  AuthError,
 } from '../../../../types/auth.types';
 import { authSessionsService } from './auth-sessions.service';
 import { SignupRequestSchema, SigninRequestSchema } from './auth-sessions.schema';
@@ -78,6 +79,31 @@ export async function signinController(
       message: result.message,
       data: {
         user: result.user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getProfileController(
+  req: Request,
+  res: Response<UserAuthResponseBody | ErrorResponseBody>,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.userId;
+    console.log('Getting profile for userId:', userId); //TODO: remove before commit --- IGNORE ---
+    if (!userId) {
+      throw new AuthError(401, AuthErrorType.SESSION_MISSING, 'Authentication session is missing');
+    }
+
+    const user = await authSessionsService.getUserProfile(userId);
+
+    res.status(req.statusCode || 200).json({
+      message: user.message,
+      data: {
+        user: user.user,
       },
     });
   } catch (error) {
