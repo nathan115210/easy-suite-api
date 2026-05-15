@@ -1,4 +1,4 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, lt } from 'drizzle-orm';
 import { userSessionsTable } from './schema';
 import { db } from './index';
 
@@ -46,5 +46,14 @@ export const sessionRepository = {
 
   async deleteAllByUserId(userId: string) {
     await db.delete(userSessionsTable).where(eq(userSessionsTable.userId, userId));
+  },
+
+  async deleteExpiredSessions(now: Date = new Date()): Promise<number> {
+    const deletedSessions = await db
+      .delete(userSessionsTable)
+      .where(lt(userSessionsTable.expiresAt, now))
+      .returning({ id: userSessionsTable.id });
+
+    return deletedSessions.length;
   },
 };

@@ -119,6 +119,7 @@ Signs in an existing user and opens an authenticated session. On success, an `au
 ```
 
 Each successful signin creates a new session with a new `expiresAt`. Existing valid sessions are not invalidated by default.
+Expired sessions are periodically removed by a background cleanup job.
 
 **Response `400`** — validation failure
 

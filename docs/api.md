@@ -149,6 +149,7 @@ Also sets an `authSessionId` HTTP-only cookie (expires in 7 days).
 
 Each successful signin creates a new session with a fresh expiry timestamp.
 Existing sessions remain valid until they expire or are explicitly deleted.
+Expired sessions are periodically removed by a background cleanup job.
 
 **Response `400`** — invalid request body:
 
