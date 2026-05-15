@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
+// Current limiter key is IP-based. If needed, extend failed-attempt tracking by email/username.
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // strict limit for write endpoints (signup/signin)

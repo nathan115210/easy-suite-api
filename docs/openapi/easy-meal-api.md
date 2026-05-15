@@ -87,7 +87,7 @@ Signs in an existing user and opens an authenticated session. On success, an `au
 | `username` | string | No       | Optional                                    |
 | `password` | string | Yes      | Must match user credentials                 |
 
-`email` and `username` are both optional fields, but at least one of them must be provided.
+Exactly one identifier must be provided: `email` or `username` (not both).
 
 ```json
 {
@@ -191,16 +191,7 @@ None.
 }
 ```
 
-**Response `404`** — user not found
-
-```json
-{
-  "error": {
-    "code": "USER_NOT_FOUND",
-    "message": "User not found"
-  }
-}
-```
+If a session points to a deleted user, the API treats it as an invalid session and returns `401` (`SESSION_NOT_FOUND`).
 
 **Response `500`** — internal server error
 

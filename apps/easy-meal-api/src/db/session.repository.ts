@@ -1,8 +1,7 @@
 import { and, eq, gt, lt } from 'drizzle-orm';
 import { userSessionsTable } from './schema';
 import { db } from './index';
-
-type DbExecutor = Pick<typeof db, 'insert'>;
+import type { DbExecutor } from './types';
 
 type CreatedSession = {
   id: string;

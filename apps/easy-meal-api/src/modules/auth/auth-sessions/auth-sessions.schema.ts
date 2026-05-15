@@ -16,8 +16,8 @@ export const SignupRequestSchema = registry.register(
   }),
 );
 
-export const SignupResponseSchema = registry.register(
-  'SignupResponse',
+export const AuthUserResponseSchema = registry.register(
+  'AuthUserResponse',
   z.object({
     message: z.string(),
     data: z.object({
@@ -50,7 +50,7 @@ registry.registerPath({
       description: 'User signed up successfully',
       content: {
         'application/json': {
-          schema: SignupResponseSchema,
+          schema: AuthUserResponseSchema,
         },
       },
     },
@@ -97,37 +97,12 @@ registry.registerPath({
   },
 });
 
-export const SigninResponseSchema = registry.register(
-  'SigninResponse',
-  z.object({
-    message: z.string(),
-    data: z.object({
-      user: z.object({
-        id: z.string(),
-        username: z.string(),
-        email: z.email(),
-      }),
-    }),
-  }),
-);
-
 export const SigninRequestSchema = registry.register(
   'SigninRequest',
-  z
-    .object({
-      email: z.email().optional(),
-      username: z.string().optional(),
-      password: z.string().min(1, { message: 'Password is required' }),
-    })
-    .superRefine((data, ctx) => {
-      if (!data.email && !data.username) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Either email or username is required',
-          path: ['email'],
-        });
-      }
-    }),
+  z.object({
+    identifier: z.string().min(1, { message: 'Email or username is required' }),
+    password: z.string().min(1, { message: 'Password is required' }),
+  }),
 );
 
 export type SignupRequestBody = z.infer<typeof SignupRequestSchema>;
@@ -153,7 +128,7 @@ registry.registerPath({
       description: 'User signed in successfully',
       content: {
         'application/json': {
-          schema: SigninResponseSchema,
+          schema: AuthUserResponseSchema,
         },
       },
     },
@@ -200,20 +175,6 @@ registry.registerPath({
   },
 });
 
-export const ProfileResponseSchema = registry.register(
-  'ProfileResponse',
-  z.object({
-    message: z.string(),
-    data: z.object({
-      user: z.object({
-        id: z.string(),
-        username: z.string(),
-        email: z.email(),
-      }),
-    }),
-  }),
-);
-
 registry.registerPath({
   method: 'get',
   path: '/v1/auth-sessions/profile',
@@ -224,25 +185,12 @@ registry.registerPath({
       description: 'User profile retrieved successfully',
       content: {
         'application/json': {
-          schema: ProfileResponseSchema,
+          schema: AuthUserResponseSchema,
         },
       },
     },
     '401': {
       description: 'Authentication session missing or invalid',
-      content: {
-        'application/json': {
-          schema: z.object({
-            error: z.object({
-              code: z.string(),
-              message: z.string(),
-            }),
-          }),
-        },
-      },
-    },
-    '404': {
-      description: 'User not found',
       content: {
         'application/json': {
           schema: z.object({

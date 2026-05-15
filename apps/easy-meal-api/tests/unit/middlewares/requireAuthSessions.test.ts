@@ -8,7 +8,7 @@ jest.mock('../../../src/db/session.repository', () => ({
 }));
 
 import { sessionRepository } from '../../../src/db/session.repository';
-import { requireAuth } from '../../../src/middlewares/auth/auth-session/requireAuth';
+import { requireAuthSessions } from '../../../src/middlewares/auth/auth-session/requireAuthSessions';
 
 const mockFindValidSessionById = sessionRepository.findValidSessionById as jest.Mock;
 
@@ -41,12 +41,12 @@ beforeEach(() => {
   mockFindValidSessionById.mockResolvedValue(mockValidSession);
 });
 
-describe('requireAuth', () => {
+describe('requireAuthSessions', () => {
   it('calls next() without error on a valid session cookie', async () => {
     const req = makeReq(sessionId);
     const next = makeNext();
 
-    await requireAuth(req, makeRes(), next);
+    await requireAuthSessions(req, makeRes(), next);
 
     expect(next).toHaveBeenCalledWith();
   });
@@ -54,7 +54,7 @@ describe('requireAuth', () => {
   it('sets req.userId from the session data', async () => {
     const req = makeReq(sessionId);
 
-    await requireAuth(req, makeRes(), makeNext());
+    await requireAuthSessions(req, makeRes(), makeNext());
 
     expect(req.userId).toBe(userId);
   });
@@ -62,7 +62,7 @@ describe('requireAuth', () => {
   it('calls findValidSessionById with the cookie value', async () => {
     const req = makeReq(sessionId);
 
-    await requireAuth(req, makeRes(), makeNext());
+    await requireAuthSessions(req, makeRes(), makeNext());
 
     expect(mockFindValidSessionById).toHaveBeenCalledWith(sessionId);
   });
@@ -71,7 +71,7 @@ describe('requireAuth', () => {
     const req = makeReq();
     const next = makeNext();
 
-    await requireAuth(req, makeRes(), next);
+    await requireAuthSessions(req, makeRes(), next);
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({ statusCode: 401, code: AuthErrorType.SESSION_MISSING }),
@@ -84,7 +84,7 @@ describe('requireAuth', () => {
     const req = makeReq(sessionId);
     const next = makeNext();
 
-    await requireAuth(req, makeRes(), next);
+    await requireAuthSessions(req, makeRes(), next);
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({ statusCode: 401, code: AuthErrorType.SESSION_NOT_FOUND }),
@@ -95,7 +95,7 @@ describe('requireAuth', () => {
     mockFindValidSessionById.mockResolvedValue(null);
     const req = makeReq(sessionId);
 
-    await requireAuth(req, makeRes(), makeNext());
+    await requireAuthSessions(req, makeRes(), makeNext());
 
     expect(req.userId).toBeUndefined();
   });
@@ -106,7 +106,7 @@ describe('requireAuth', () => {
     const req = makeReq(sessionId);
     const next = makeNext();
 
-    await requireAuth(req, makeRes(), next);
+    await requireAuthSessions(req, makeRes(), next);
 
     expect(next).toHaveBeenCalledWith(dbError);
   });

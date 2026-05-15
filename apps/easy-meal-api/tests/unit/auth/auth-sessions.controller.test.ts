@@ -1,5 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AuthErrorType, AUTH_SESSION_COOKIE_NAME } from '../../../types/auth.types';
+import {
+  AuthErrorType,
+  AuthError,
+  AUTH_SESSION_COOKIE_NAME,
+  type AuthenticatedRequest,
+} from '../../../types/auth.types';
 import type {
   SignupRequestBody,
   SigninRequestBody,
@@ -17,8 +22,15 @@ jest.mock('../../../src/middlewares/auth/auth-limiter', () => ({
   authLimiter: jest.fn((req, res, next) => next()),
 }));
 
+jest.mock('../../../src/db/session.repository', () => ({
+  sessionRepository: {
+    deleteById: jest.fn(),
+  },
+}));
+
 import { authSessionsService } from '../../../src/modules/auth/auth-sessions/auth-sessions.service';
 import { authLimiter } from '../../../src/middlewares/auth/auth-limiter';
+import { sessionRepository } from '../../../src/db/session.repository';
 import {
   signupController,
   signinController,
@@ -29,6 +41,7 @@ const mockSignup = authSessionsService.signup as jest.Mock;
 const mockSignin = authSessionsService.signin as jest.Mock;
 const mockGetUserProfile = authSessionsService.getUserProfile as jest.Mock;
 const mockAuthLimiter = authLimiter as unknown as jest.Mock;
+const mockDeleteSessionById = sessionRepository.deleteById as jest.Mock;
 
 const validBody = {
   username: 'testuser',
@@ -62,6 +75,7 @@ function makeNext() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockDeleteSessionById.mockResolvedValue(undefined);
   mockAuthLimiter.mockImplementation((req, res, next) => next());
 });
 
@@ -225,13 +239,13 @@ describe('signupController', () => {
 });
 
 describe('signinController', () => {
-  const validSigninBodyByEmail: SigninRequestBody = {
-    email: 'test@example.com',
+  const validSigninBodyWithEmail: SigninRequestBody = {
+    identifier: 'test@example.com',
     password: 'password123',
   };
 
-  const validSigninBodyByUsername: SigninRequestBody = {
-    username: 'testuser',
+  const validSigninBodyWithUsername: SigninRequestBody = {
+    identifier: 'testuser',
     password: 'password123',
   };
 
@@ -241,7 +255,7 @@ describe('signinController', () => {
       user: mockUser,
       session: mockSession,
     });
-    const req = { body: validSigninBodyByEmail } as unknown as Request<
+    const req = { body: validSigninBodyWithEmail } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -265,7 +279,7 @@ describe('signinController', () => {
       user: mockUser,
       session: mockSession,
     });
-    const req = { body: validSigninBodyByEmail } as unknown as Request<
+    const req = { body: validSigninBodyWithEmail } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -282,13 +296,13 @@ describe('signinController', () => {
     );
   });
 
-  it('passes the parsed body to the service when signing in by email', async () => {
+  it('passes the parsed body to the service when signing in with email identifier', async () => {
     mockSignin.mockResolvedValue({
       message: 'Signin successful',
       user: mockUser,
       session: mockSession,
     });
-    const req = { body: validSigninBodyByEmail } as unknown as Request<
+    const req = { body: validSigninBodyWithEmail } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -298,16 +312,16 @@ describe('signinController', () => {
 
     await signinController(req, res, next);
 
-    expect(mockSignin).toHaveBeenCalledWith(validSigninBodyByEmail);
+    expect(mockSignin).toHaveBeenCalledWith(validSigninBodyWithEmail);
   });
 
-  it('passes the parsed body to the service when signing in by username', async () => {
+  it('passes the parsed body to the service when signing in with username identifier', async () => {
     mockSignin.mockResolvedValue({
       message: 'Signin successful',
       user: mockUser,
       session: mockSession,
     });
-    const req = { body: validSigninBodyByUsername } as unknown as Request<
+    const req = { body: validSigninBodyWithUsername } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -317,11 +331,31 @@ describe('signinController', () => {
 
     await signinController(req, res, next);
 
-    expect(mockSignin).toHaveBeenCalledWith(validSigninBodyByUsername);
+    expect(mockSignin).toHaveBeenCalledWith(validSigninBodyWithUsername);
   });
 
-  it('returns 400 with VALIDATION_ERROR when neither email nor username is provided', async () => {
+  it('returns 400 with VALIDATION_ERROR when identifier is not provided', async () => {
     const req = { body: { password: 'password123' } } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
+      }),
+    );
+    expect(mockSignin).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 with VALIDATION_ERROR when password is not provided', async () => {
+    const req = { body: { identifier: 'test@example.com' } } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -342,26 +376,6 @@ describe('signinController', () => {
 
   it('returns 400 with VALIDATION_ERROR when body is empty', async () => {
     const req = { body: {} } as unknown as Request<
-      Record<string, string>,
-      unknown,
-      SigninRequestBody
-    >;
-    const res = makeRes();
-    const next = makeNext();
-
-    await signinController(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
-      }),
-    );
-    expect(mockSignin).not.toHaveBeenCalled();
-  });
-
-  it('returns 400 with VALIDATION_ERROR when email format is invalid', async () => {
-    const req = { body: { email: 'not-an-email', password: 'password123' } } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -401,7 +415,7 @@ describe('signinController', () => {
   it('calls next() with the error when the service throws', async () => {
     const error = new Error('Unexpected error');
     mockSignin.mockRejectedValue(error);
-    const req = { body: validSigninBodyByEmail } as unknown as Request<
+    const req = { body: validSigninBodyWithEmail } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -420,7 +434,7 @@ describe('signinController', () => {
       res.status(429).send('Too many requests from this IP, please try again later.');
     });
 
-    const req = { body: validSigninBodyByEmail } as unknown as Request<
+    const req = { body: validSigninBodyWithEmail } as unknown as Request<
       Record<string, string>,
       unknown,
       SigninRequestBody
@@ -445,7 +459,7 @@ describe('getProfileController', () => {
   });
 
   it('returns 200 with user data when userId is present on request', async () => {
-    const req = { userId } as unknown as Request;
+    const req = { userId } as AuthenticatedRequest;
     const res = makeRes();
     const next = makeNext();
 
@@ -460,7 +474,7 @@ describe('getProfileController', () => {
   });
 
   it('passes userId from request to the service', async () => {
-    const req = { userId } as unknown as Request;
+    const req = { userId } as AuthenticatedRequest;
     const res = makeRes();
     const next = makeNext();
 
@@ -469,23 +483,30 @@ describe('getProfileController', () => {
     expect(mockGetUserProfile).toHaveBeenCalledWith(userId);
   });
 
-  it('calls next() with SESSION_MISSING error when userId is not on request', async () => {
-    const req = {} as unknown as Request;
+  it('maps USER_NOT_FOUND to SESSION_NOT_FOUND and deletes stale session', async () => {
+    mockGetUserProfile.mockRejectedValue(
+      new AuthError(404, AuthErrorType.USER_NOT_FOUND, 'User not found'),
+    );
+    const req = {
+      userId,
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'stale-session-id' },
+      log: { warn: jest.fn() },
+    } as unknown as AuthenticatedRequest;
     const res = makeRes();
     const next = makeNext();
 
     await getProfileController(req, res, next);
 
+    expect(mockDeleteSessionById).toHaveBeenCalledWith('stale-session-id');
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ code: 'SESSION_MISSING', statusCode: 401 }),
+      expect.objectContaining({ code: AuthErrorType.SESSION_NOT_FOUND, statusCode: 401 }),
     );
-    expect(mockGetUserProfile).not.toHaveBeenCalled();
   });
 
   it('calls next() with the error when the service throws', async () => {
     const error = new Error('Service failure');
     mockGetUserProfile.mockRejectedValue(error);
-    const req = { userId } as unknown as Request;
+    const req = { userId } as AuthenticatedRequest;
     const res = makeRes();
     const next = makeNext();
 

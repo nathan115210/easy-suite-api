@@ -8,60 +8,13 @@ jest.mock('argon2', () => ({
 }));
 
 import argon2 from 'argon2';
-import {
-  isValidEmail,
-  isStrongPassword,
-  hashPassword,
-  toPublicUser,
-  verifyPassword,
-} from '../../../src/utils/auth-utils';
+import { hashPassword, toPublicUser, verifyPassword } from '../../../src/utils/auth-utils';
 
 const mockArgon2Hash = argon2.hash as jest.Mock;
 const mockArgon2Verify = argon2.verify as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
-});
-
-describe('isValidEmail', () => {
-  it('returns true for a valid email', () => {
-    expect(isValidEmail('john@example.com')).toBe(true);
-  });
-
-  it('returns false for undefined and empty values', () => {
-    expect(isValidEmail()).toBe(false);
-    expect(isValidEmail('')).toBe(false);
-  });
-
-  it('normalizes casing and surrounding spaces before validating', () => {
-    expect(isValidEmail('  John@Example.COM  ')).toBe(true);
-  });
-
-  it('returns false for invalid email formats', () => {
-    expect(isValidEmail('not-an-email')).toBe(false);
-    expect(isValidEmail('john@')).toBe(false);
-    expect(isValidEmail('@example.com')).toBe(false);
-  });
-});
-
-describe('isStrongPassword', () => {
-  it('returns true when password has at least 3 chars, one uppercase letter, and one number', () => {
-    expect(isStrongPassword('A1b')).toBe(true);
-    expect(isStrongPassword('AB1')).toBe(true);
-    expect(isStrongPassword('Pass123')).toBe(true);
-  });
-
-  it('returns false when password is shorter than 3 characters', () => {
-    expect(isStrongPassword('A1')).toBe(false);
-  });
-
-  it('returns false when password has no uppercase letter', () => {
-    expect(isStrongPassword('abc1')).toBe(false);
-  });
-
-  it('returns false when password has no number', () => {
-    expect(isStrongPassword('Abc')).toBe(false);
-  });
 });
 
 describe('hashPassword', () => {

@@ -203,9 +203,9 @@ describe('authSessionsService.signin', () => {
     mockVerifyPassword.mockResolvedValue(true);
   });
 
-  it('returns user (without passwordHash), session, and success message on valid credentials', async () => {
+  it('returns user (without passwordHash), session, and success message on valid credentials with email', async () => {
     const result = await authSessionsService.signin({
-      email: 'test@example.com',
+      identifier: 'test@example.com',
       password: 'password123',
     });
 
@@ -216,36 +216,50 @@ describe('authSessionsService.signin', () => {
     });
   });
 
-  it('looks up user by email when email is provided', async () => {
-    await authSessionsService.signin({ email: 'test@example.com', password: 'password123' });
+  it('returns user (without passwordHash), session, and success message on valid credentials with username', async () => {
+    const result = await authSessionsService.signin({
+      identifier: 'testuser',
+      password: 'password123',
+    });
+
+    expect(result).toEqual({
+      message: 'Signin successful',
+      user: { id: mockDbUser.id, username: mockDbUser.username, email: mockDbUser.email },
+      session: mockCreatedSession,
+    });
+  });
+
+  it('looks up user by email when identifier is a valid email', async () => {
+    await authSessionsService.signin({ identifier: 'test@example.com', password: 'password123' });
 
     expect(mockFindByEmail).toHaveBeenCalledWith('test@example.com');
     expect(mockFindByUsername).not.toHaveBeenCalled();
   });
 
-  it('looks up user by username when username is provided', async () => {
-    await authSessionsService.signin({ username: 'testuser', password: 'password123' });
+  it('looks up user by username when identifier is not a valid email', async () => {
+    await authSessionsService.signin({ identifier: 'testuser', password: 'password123' });
 
     expect(mockFindByUsername).toHaveBeenCalledWith('testuser');
     expect(mockFindByEmail).not.toHaveBeenCalled();
   });
 
   it('verifies the password against the stored hash', async () => {
-    await authSessionsService.signin({ email: 'test@example.com', password: 'password123' });
+    await authSessionsService.signin({ identifier: 'test@example.com', password: 'password123' });
 
     expect(mockVerifyPassword).toHaveBeenCalledWith('password123', mockDbUser.passwordHash);
   });
 
   it('creates a new session with the user id on successful signin', async () => {
-    await authSessionsService.signin({ email: 'test@example.com', password: 'password123' });
+    await authSessionsService.signin({ identifier: 'test@example.com', password: 'password123' });
 
     expect(mockCreateSession).toHaveBeenCalledWith(
       expect.objectContaining({ userId: mockDbUser.id }),
+      expect.any(Object), // executor parameter
     );
   });
 
   it('creates session with a future expiry date', async () => {
-    await authSessionsService.signin({ email: 'test@example.com', password: 'password123' });
+    await authSessionsService.signin({ identifier: 'test@example.com', password: 'password123' });
 
     const [[sessionData]] = mockCreateSession.mock.calls;
     expect(sessionData.expiresAt).toBeInstanceOf(Date);
@@ -256,7 +270,7 @@ describe('authSessionsService.signin', () => {
     mockFindByEmail.mockResolvedValue(null);
 
     await expect(
-      authSessionsService.signin({ email: 'unknown@example.com', password: 'password123' }),
+      authSessionsService.signin({ identifier: 'unknown@example.com', password: 'password123' }),
     ).rejects.toMatchObject({
       statusCode: 401,
       code: AuthErrorType.INVALID_CREDENTIALS,
@@ -267,7 +281,7 @@ describe('authSessionsService.signin', () => {
     mockFindByUsername.mockResolvedValue(null);
 
     await expect(
-      authSessionsService.signin({ username: 'unknown', password: 'password123' }),
+      authSessionsService.signin({ identifier: 'unknown', password: 'password123' }),
     ).rejects.toMatchObject({
       statusCode: 401,
       code: AuthErrorType.INVALID_CREDENTIALS,
@@ -278,7 +292,7 @@ describe('authSessionsService.signin', () => {
     mockVerifyPassword.mockResolvedValue(false);
 
     await expect(
-      authSessionsService.signin({ email: 'test@example.com', password: 'wrong_password' }),
+      authSessionsService.signin({ identifier: 'test@example.com', password: 'wrong_password' }),
     ).rejects.toMatchObject({
       statusCode: 401,
       code: AuthErrorType.INVALID_CREDENTIALS,
@@ -289,7 +303,7 @@ describe('authSessionsService.signin', () => {
     mockVerifyPassword.mockResolvedValue(false);
 
     await expect(
-      authSessionsService.signin({ email: 'test@example.com', password: 'wrong_password' }),
+      authSessionsService.signin({ identifier: 'test@example.com', password: 'wrong_password' }),
     ).rejects.toBeDefined();
 
     expect(mockCreateSession).not.toHaveBeenCalled();
@@ -297,9 +311,10 @@ describe('authSessionsService.signin', () => {
 
   it('throws an AuthError instance for all error cases', async () => {
     mockFindByEmail.mockResolvedValue(null);
+    mockFindByUsername.mockResolvedValue(null);
 
     await expect(
-      authSessionsService.signin({ email: 'unknown@example.com', password: 'password123' }),
+      authSessionsService.signin({ identifier: 'unknown@example.com', password: 'password123' }),
     ).rejects.toBeInstanceOf(AuthError);
   });
 });

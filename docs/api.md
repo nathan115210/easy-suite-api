@@ -89,6 +89,8 @@ Also sets an `authSessionId` HTTP-only cookie (expires in 7 days) used for subse
 }
 ```
 
+Design note: returning explicit conflict codes (`EMAIL_ALREADY_IN_USE` / `USERNAME_ALREADY_IN_USE`) intentionally favors user experience over strict account-enumeration resistance. This helps legitimate users recover quickly (for example, by signing in instead of retrying signup).
+
 **Response `500`** — password processing or database failure:
 
 ```json
@@ -114,7 +116,7 @@ Signs in an existing user and creates an authenticated session. On success, an `
 | `username` | string | No       | Optional                                    |
 | `password` | string | Yes      | Must match user credentials                 |
 
-`email` and `username` are both optional fields, but at least one of them must be provided.
+Exactly one identifier must be provided: `email` or `username` (not both).
 
 ```json
 {
@@ -210,16 +212,7 @@ Authentication is required via `authSessionId` cookie (set by signup/signin).
 }
 ```
 
-**Response `404`** — user not found:
-
-```json
-{
-  "error": {
-    "code": "USER_NOT_FOUND",
-    "message": "User not found"
-  }
-}
-```
+If a session points to a deleted user, the API treats it as an invalid session and returns `401` (`SESSION_NOT_FOUND`).
 
 ## Meals
 

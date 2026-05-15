@@ -8,7 +8,8 @@ config({
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(8282),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.url(),
+  ALLOWED_ORIGIN: z.url().default('http://localhost:3000'),
   LOG_LEVEL: z.string().default('info'),
   SESSION_CLEANUP_ENABLED: z
     .enum(['true', 'false'])
