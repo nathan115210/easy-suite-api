@@ -1,10 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
-import {
-  AuthErrorType,
-  AUTH_SESSION_COOKIE_NAME,
-  type RegisterUserBody,
-  type SigninRequestBody,
-} from '../../../types/auth.types';
+import { AuthErrorType, AUTH_SESSION_COOKIE_NAME } from '../../../types/auth.types';
+import type {
+  SignupRequestBody,
+  SigninRequestBody,
+} from '../../../src/modules/auth/auth-sessions/auth-sessions.schema';
 
 jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () => ({
   authSessionsService: {
@@ -76,7 +75,7 @@ describe('signupController', () => {
     const req = { body: validBody } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
     const next = makeNext();
@@ -100,7 +99,7 @@ describe('signupController', () => {
     const req = { body: validBody } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
     const next = makeNext();
@@ -123,7 +122,7 @@ describe('signupController', () => {
     const req = { body: validBody } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
     const next = makeNext();
@@ -136,7 +135,7 @@ describe('signupController', () => {
   it('returns 400 with VALIDATION_ERROR when body fails schema validation', async () => {
     const req = {
       body: { username: 'ab', email: 'not-an-email', password: '123' },
-    } as unknown as Request<Record<string, string>, unknown, RegisterUserBody>;
+    } as unknown as Request<Record<string, string>, unknown, SignupRequestBody>;
     const res = makeRes();
     const next = makeNext();
 
@@ -155,7 +154,7 @@ describe('signupController', () => {
     const req = { body: {} } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
     const next = makeNext();
@@ -175,7 +174,7 @@ describe('signupController', () => {
     const req = { body: {} } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
     const next = makeNext();
@@ -195,7 +194,7 @@ describe('signupController', () => {
     const req = { body: validBody } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
     const next = makeNext();
@@ -214,7 +213,7 @@ describe('signupController', () => {
     const req = { body: validBody } as unknown as Request<
       Record<string, string>,
       unknown,
-      RegisterUserBody
+      SignupRequestBody
     >;
     const res = makeRes();
 

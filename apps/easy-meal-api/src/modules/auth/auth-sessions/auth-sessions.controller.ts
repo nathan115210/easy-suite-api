@@ -5,15 +5,18 @@ import {
   AUTH_SESSION_COOKIE_NAME,
   AUTH_COOKIE_OPTIONS,
   AuthErrorType,
-  RegisterUserBody,
-  SigninRequestBody,
   AuthError,
 } from '../../../../types/auth.types';
 import { authSessionsService } from './auth-sessions.service';
-import { SignupRequestSchema, SigninRequestSchema } from './auth-sessions.schema';
+import {
+  SignupRequestSchema,
+  SigninRequestSchema,
+  type SignupRequestBody,
+  type SigninRequestBody,
+} from './auth-sessions.schema';
 
 export async function signupController(
-  req: Request<Record<string, string>, unknown, RegisterUserBody>,
+  req: Request<Record<string, string>, unknown, SignupRequestBody>,
   res: Response<UserAuthResponseBody | ErrorResponseBody>,
   next: NextFunction,
 ): Promise<void> {

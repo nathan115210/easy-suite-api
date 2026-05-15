@@ -130,6 +130,9 @@ export const SigninRequestSchema = registry.register(
     }),
 );
 
+export type SignupRequestBody = z.infer<typeof SignupRequestSchema>;
+export type SigninRequestBody = z.infer<typeof SigninRequestSchema>;
+
 registry.registerPath({
   method: 'post',
   path: '/v1/auth-sessions/signin',

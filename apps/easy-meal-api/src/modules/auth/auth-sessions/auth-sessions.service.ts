@@ -3,10 +3,9 @@ import {
   type AuthSession,
   AuthError,
   AuthErrorType,
-  RegisterUserBody,
   SESSION_DURATION_MS,
-  SigninRequestBody,
 } from '../../../../types/auth.types';
+import type { SignupRequestBody, SigninRequestBody } from './auth-sessions.schema';
 import { hashPassword, toPublicUser, verifyPassword } from '../../../utils/auth-utils';
 import { userRepository } from '../../../db/user.repository';
 import { sessionRepository } from '../../../db/session.repository';
@@ -31,7 +30,7 @@ function isUniqueViolation(error: unknown): error is DbErrorLike {
   return typeof error === 'object' && error !== null && (error as DbErrorLike).code === '23505';
 }
 
-const signup = async (userData: RegisterUserBody): Promise<UserAuthSessionServiceResult> => {
+const signup = async (userData: SignupRequestBody): Promise<UserAuthSessionServiceResult> => {
   const { username, email, password } = userData;
 
   // Check for existing user with the same email or username

@@ -78,15 +78,3 @@ export type AuthSession = {
   id: string;
   expiresAt: Date;
 };
-
-export type RegisterUserBody = {
-  username: string;
-  email: string;
-  password: string;
-};
-
-export type SigninRequestBody = {
-  email?: string;
-  username?: string;
-  password: string;
-};
