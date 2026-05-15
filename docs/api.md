@@ -25,6 +25,195 @@ Response:
 }
 ```
 
+## Auth Sessions
+
+```http
+POST /v1/auth-sessions/signup
+```
+
+Registers a new user and creates an authenticated session. On success, an `authSessionId` cookie is set automatically.
+
+**Request body:**
+
+| Field      | Type   | Required | Constraints                                    |
+| ---------- | ------ | -------- | ---------------------------------------------- |
+| `username` | string | Yes      | 3–30 characters                                |
+| `email`    | string | Yes      | Valid email format                             |
+| `password` | string | Yes      | At least 3 chars, 1 uppercase letter, 1 number |
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+**Response `201`:**
+
+```json
+{
+  "message": "User created successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+Also sets an `authSessionId` HTTP-only cookie (expires in 7 days) used for subsequent authenticated requests.
+
+**Response `400`** — invalid request body:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `409`** — email or username already taken:
+
+```json
+{
+  "error": {
+    "code": "EMAIL_ALREADY_IN_USE | USERNAME_ALREADY_IN_USE",
+    "message": "string"
+  }
+}
+```
+
+Design note: returning explicit conflict codes (`EMAIL_ALREADY_IN_USE` / `USERNAME_ALREADY_IN_USE`) intentionally favors user experience over strict account-enumeration resistance. This helps legitimate users recover quickly (for example, by signing in instead of retrying signup).
+
+**Response `500`** — password processing or database failure:
+
+```json
+{
+  "error": {
+    "code": "PASSWORD_HASH_FAILED | DATABASE_ERROR | INTERNAL_ERROR",
+    "message": "string"
+  }
+}
+```
+
+```http
+POST /v1/auth-sessions/signin
+```
+
+Signs in an existing user and creates an authenticated session. On success, an `authSessionId` cookie is set automatically.
+
+**Request body:**
+
+| Field      | Type   | Required | Constraints                                 |
+| ---------- | ------ | -------- | ------------------------------------------- |
+| `email`    | string | No       | Optional; must be a valid email if provided |
+| `username` | string | No       | Optional                                    |
+| `password` | string | Yes      | Must match user credentials                 |
+
+Exactly one identifier must be provided: `email` or `username` (not both).
+
+```json
+{
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+```json
+{
+  "username": "johndoe",
+  "password": "secret123"
+}
+```
+
+**Response `200`:**
+
+```json
+{
+  "message": "Signin successful",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+Also sets an `authSessionId` HTTP-only cookie (expires in 7 days).
+
+Each successful signin creates a new session with a fresh expiry timestamp.
+Existing sessions remain valid until they expire or are explicitly deleted.
+Expired sessions are periodically removed by a background cleanup job.
+
+**Response `400`** — invalid request body:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `401`** — invalid credentials:
+
+```json
+{
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Invalid credentials"
+  }
+}
+```
+
+```http
+GET /v1/auth-sessions/profile
+```
+
+Returns the current authenticated user's profile.
+
+Authentication is required via `authSessionId` cookie (set by signup/signin).
+
+**Request body:** none
+
+**Response `200`:**
+
+```json
+{
+  "message": "User profile retrieved successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+**Response `401`** — session missing or invalid:
+
+```json
+{
+  "error": {
+    "code": "SESSION_MISSING | SESSION_NOT_FOUND",
+    "message": "string"
+  }
+}
+```
+
+If a session points to a deleted user, the API treats it as an invalid session and returns `401` (`SESSION_NOT_FOUND`).
+
 ## Meals
 
 ```http

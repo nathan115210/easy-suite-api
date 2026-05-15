@@ -29,7 +29,7 @@ docs/
 The first API service. It uses:
 
 - Express for HTTP routing
-- Helmet and CORS for baseline middleware
+- Helmet and CORS with explicit allowed origin for cookie-based auth
 - `pino-http` for request logging
 - Zod for environment validation
 - Drizzle ORM with PostgreSQL

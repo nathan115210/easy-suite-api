@@ -6,6 +6,8 @@ import { logger } from '@easy-suite/utils';
 import { v1Router } from './v1/router';
 import { errorHandler } from './middlewares/error-handler';
 import { registerSwaggerDocs } from './openapi/swagger';
+import cookieParser from 'cookie-parser';
+import { env } from './config/env';
 
 export const app = express();
 
@@ -16,8 +18,14 @@ app.use(
 );
 
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: env.ALLOWED_ORIGIN,
+    credentials: true,
+  }),
+);
 app.use(express.json());
+app.use(cookieParser());
 
 // Register Swagger documentation
 registerSwaggerDocs(app);

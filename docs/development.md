@@ -31,18 +31,31 @@ cp .env.example .env
 
 Current variables:
 
-| Variable            | Purpose                                    | Default                                                     |
-| ------------------- | ------------------------------------------ | ----------------------------------------------------------- |
-| `NODE_ENV`          | Runtime environment                        | `development`                                               |
-| `PORT`              | API port                                   | `8282`                                                      |
-| `LOG_LEVEL`         | Logger level                               | `info`                                                      |
-| `POSTGRES_DB`       | Local PostgreSQL database                  | `easy_meal`                                                 |
-| `POSTGRES_USER`     | Local PostgreSQL user                      | `easy_meal`                                                 |
-| `POSTGRES_PASSWORD` | Local PostgreSQL password                  | `easy_meal`                                                 |
-| `POSTGRES_PORT`     | Host PostgreSQL port                       | `5432`                                                      |
-| `DATABASE_URL`      | Drizzle and API database connection string | `postgresql://easy_meal:easy_meal@localhost:5432/easy_meal` |
+| Variable                      | Purpose                                                | Default                                                     |
+| ----------------------------- | ------------------------------------------------------ | ----------------------------------------------------------- |
+| `NODE_ENV`                    | Runtime environment                                    | `development`                                               |
+| `PORT`                        | API port                                               | `8282`                                                      |
+| `LOG_LEVEL`                   | Logger level                                           | `info`                                                      |
+| `POSTGRES_DB`                 | Local PostgreSQL database                              | `easy_meal`                                                 |
+| `POSTGRES_USER`               | Local PostgreSQL user                                  | `easy_meal`                                                 |
+| `POSTGRES_PASSWORD`           | Local PostgreSQL password                              | `easy_meal`                                                 |
+| `POSTGRES_PORT`               | Host PostgreSQL port                                   | `5432`                                                      |
+| `DATABASE_URL`                | Drizzle and API database connection string             | `postgresql://easy_meal:easy_meal@localhost:5432/easy_meal` |
+| `ALLOWED_ORIGIN`              | Frontend origin allowed for credentialed CORS requests | `http://localhost:3000`                                     |
+| `SESSION_CLEANUP_ENABLED`     | Enable periodic expired-session cleanup job            | `true`                                                      |
+| `SESSION_CLEANUP_INTERVAL_MS` | Interval for deleting expired sessions (milliseconds)  | `3600000`                                                   |
 
 The API loads environment variables from the root `.env` file.
+
+## Session Cleanup Job
+
+The API starts a background cleanup job on startup to remove expired rows from `user_sessions`.
+
+- Query behavior: delete sessions where `expires_at < NOW()`
+- Trigger: immediate run on startup, then interval-based runs
+- Controlled by: `SESSION_CLEANUP_ENABLED` and `SESSION_CLEANUP_INTERVAL_MS`
+
+This cleanup does not replace logout behavior. A future logout endpoint should explicitly delete active session rows for the user action, while this job only removes already-expired sessions.
 
 ## Start Local PostgreSQL
 

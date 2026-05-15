@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { registry } from '../../openapi/registry';
-import { MealType } from '../../../easy-meal-api.types';
+import { MealType } from '../../../types/meals.types';
 
 const MealTypeResponseSchema = z.enum([
   MealType.Breakfast,

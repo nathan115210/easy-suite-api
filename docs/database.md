@@ -81,3 +81,5 @@ pnpm db:check
 ## Development Notes
 
 Use migrations for durable schema changes. `db:push` is useful during early local iteration, but migrations should become the default once product tables stabilize.
+
+The API includes a periodic cleanup task for `user_sessions` that removes expired rows (`expires_at < NOW()`). This keeps session-table growth bounded over time without affecting active sessions.
