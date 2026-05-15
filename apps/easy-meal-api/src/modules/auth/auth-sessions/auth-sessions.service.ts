@@ -4,18 +4,19 @@ import {
   AuthError,
   AuthErrorType,
   SESSION_DURATION_MS,
+  SigninRequestBody,
 } from '../../../../types/auth.types';
-import { isValidEmail, hashPassword } from '../../../utils/auth-utils';
+import { isValidEmail, hashPassword, verifyPassword } from '../../../utils/auth-utils';
 import { userRepository } from '../../../db/user.repository';
 import { sessionRepository } from '../../../db/session.repository';
 
-type SignupServiceResult = {
+type UserAuthServiceResult = {
   message: string;
   user: Omit<User, 'password'>;
   session: AuthSession;
 };
 
-const signup = async (userData: Omit<User, 'id'>): Promise<SignupServiceResult> => {
+const signup = async (userData: Omit<User, 'id'>): Promise<UserAuthServiceResult> => {
   const { username, email, password } = userData;
 
   if (!username || typeof username !== 'string' || username.trim().length < 3) {
@@ -25,16 +26,16 @@ const signup = async (userData: Omit<User, 'id'>): Promise<SignupServiceResult> 
       'Username must be at least 3 characters',
     );
   }
-  if (!email) {
-    throw new AuthError(400, AuthErrorType.EMAIL_REQUIRED, 'Email is required');
-  }
-
-  if (!password) {
-    throw new AuthError(400, AuthErrorType.PASSWORD_REQUIRED, 'Password is required');
-  }
 
   if (!isValidEmail(email)) {
-    throw new AuthError(400, AuthErrorType.INVALID_EMAIL, 'Invalid email format');
+    throw new AuthError(
+      400,
+      email ? AuthErrorType.INVALID_EMAIL : AuthErrorType.EMAIL_REQUIRED,
+      email ? 'Invalid email format' : 'Email is required',
+    );
+  }
+  if (!password) {
+    throw new AuthError(400, AuthErrorType.PASSWORD_REQUIRED, 'Password is required');
   }
 
   // Check for existing user with the same email or username
@@ -72,6 +73,50 @@ const signup = async (userData: Omit<User, 'id'>): Promise<SignupServiceResult> 
   }
 };
 
+const signin = async (userCredentials: SigninRequestBody): Promise<UserAuthServiceResult> => {
+  const { email, username, password } = userCredentials;
+
+  if (!email && !username) {
+    throw new AuthError(400, AuthErrorType.VALIDATION_ERROR, 'Email or username is required');
+  }
+
+  if (!password) {
+    throw new AuthError(400, AuthErrorType.PASSWORD_REQUIRED, 'Password is required');
+  }
+
+  const existingUser = email
+    ? await userRepository.findByEmail(email)
+    : await userRepository.findByUsername(username!);
+
+  if (!existingUser) {
+    throw new AuthError(401, AuthErrorType.INVALID_CREDENTIALS, 'Invalid credentials');
+  }
+
+  const isPasswordValid = await verifyPassword(password, existingUser.passwordHash);
+  if (!isPasswordValid) {
+    throw new AuthError(401, AuthErrorType.INVALID_CREDENTIALS, 'Invalid credentials');
+  }
+
+  const newExpiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+  // create the new session for the user, every time they sign in, we create a new session with a new expiry time
+  // At the same time, keep the old session(s) valid until they expire naturally. we don't want to invalidate existing sessions on new sign-ins to allow users to be signed in on multiple devices/browsers simultaneously
+  const newSession = await sessionRepository.createSession({
+    userId: existingUser.id,
+    expiresAt: newExpiresAt,
+  });
+
+  return {
+    message: 'Signin successful',
+    user: {
+      id: existingUser.id,
+      username: existingUser.username,
+      email: existingUser.email,
+    },
+    session: newSession,
+  };
+};
+
 export const authSessionsService = {
   signup,
+  signin,
 };

@@ -1,6 +1,7 @@
 import argon2 from 'argon2';
 
-export function isValidEmail(email: string): boolean {
+export function isValidEmail(email?: string): boolean {
+  if (!email) return false;
   const normalizedEmail = email.trim().toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
 }

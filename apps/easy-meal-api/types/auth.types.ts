@@ -45,7 +45,7 @@ export type ErrorResponseBody = {
   };
 };
 
-export type SignupResponseBody = {
+export type UserAuthResponseBody = {
   message: string;
   data: {
     user: {
@@ -71,5 +71,11 @@ export type AuthSession = {
 export type RegisterUserBody = {
   username: string;
   email: string;
+  password: string;
+};
+
+export type SigninRequestBody = {
+  email?: string;
+  username?: string;
   password: string;
 };

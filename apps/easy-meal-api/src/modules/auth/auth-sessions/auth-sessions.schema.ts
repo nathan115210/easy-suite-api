@@ -5,7 +5,7 @@ export const SignupRequestSchema = registry.register(
   'SignupRequest',
   z.object({
     username: z.string().min(3).max(30),
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(6).max(50),
   }),
 );
@@ -17,12 +17,30 @@ export const SignupResponseSchema = registry.register(
     data: z.object({
       user: z.object({
         id: z.string(),
-
         username: z.string(),
-        email: z.string().email(),
+        email: z.email(),
       }),
     }),
   }),
+);
+
+export const SigninRequestSchema = registry.register(
+  'SigninRequest',
+  z
+    .object({
+      email: z.email().optional(),
+      username: z.string().optional(),
+      password: z.string(),
+    })
+    .superRefine((data, ctx) => {
+      if (!data.email && !data.username) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Either email or username is required',
+          path: ['email'],
+        });
+      }
+    }),
 );
 
 registry.registerPath({
