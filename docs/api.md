@@ -89,6 +89,79 @@ Also sets an `authSessionId` HTTP-only cookie (expires in 7 days) used for subse
 }
 ```
 
+```http
+POST /v1/auth-sessions/signin
+```
+
+Signs in an existing user and creates an authenticated session. On success, an `authSessionId` cookie is set automatically.
+
+**Request body:**
+
+| Field      | Type   | Required | Constraints                                 |
+| ---------- | ------ | -------- | ------------------------------------------- |
+| `email`    | string | No       | Optional; must be a valid email if provided |
+| `username` | string | No       | Optional                                    |
+| `password` | string | Yes      | Must match user credentials                 |
+
+`email` and `username` are both optional fields, but at least one of them must be provided.
+
+```json
+{
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+```json
+{
+  "username": "johndoe",
+  "password": "secret123"
+}
+```
+
+**Response `200`:**
+
+```json
+{
+  "message": "Signin successful",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+Also sets an `authSessionId` HTTP-only cookie (expires in 7 days).
+
+Each successful signin creates a new session with a fresh expiry timestamp.
+Existing sessions remain valid until they expire or are explicitly deleted.
+
+**Response `400`** — invalid request body:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `401`** — invalid credentials:
+
+```json
+{
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Invalid credentials"
+  }
+}
+```
+
 ## Meals
 
 ```http

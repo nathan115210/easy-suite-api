@@ -75,6 +75,85 @@ Registers a new user and opens an authenticated session. On success, an `authSes
 }
 ```
 
+#### `POST /v1/auth-sessions/signin`
+
+Signs in an existing user and opens an authenticated session. On success, an `authSessionId` HTTP-only cookie is set (TTL 7 days).
+
+**Request body**
+
+| Field      | Type   | Required | Constraints                                 |
+| ---------- | ------ | -------- | ------------------------------------------- |
+| `email`    | string | No       | Optional; must be a valid email if provided |
+| `username` | string | No       | Optional                                    |
+| `password` | string | Yes      | Must match user credentials                 |
+
+`email` and `username` are both optional fields, but at least one of them must be provided.
+
+```json
+{
+  "email": "john@example.com",
+  "password": "secret123"
+}
+```
+
+```json
+{
+  "username": "johndoe",
+  "password": "secret123"
+}
+```
+
+**Response `200`**
+
+```json
+{
+  "message": "Signin successful",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+Each successful signin creates a new session with a new `expiresAt`. Existing valid sessions are not invalidated by default.
+
+**Response `400`** — validation failure
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `401`** — invalid credentials
+
+```json
+{
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Invalid credentials"
+  }
+}
+```
+
+**Response `500`** — internal server error
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Internal Server Error"
+  }
+}
+```
+
 ---
 
 ### Meals

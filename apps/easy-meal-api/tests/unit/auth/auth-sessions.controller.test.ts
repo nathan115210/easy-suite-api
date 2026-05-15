@@ -3,18 +3,30 @@ import {
   AuthErrorType,
   AUTH_SESSION_COOKIE_NAME,
   type RegisterUserBody,
+  type SigninRequestBody,
 } from '../../../types/auth.types';
 
 jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () => ({
   authSessionsService: {
     signup: jest.fn(),
+    signin: jest.fn(),
   },
 }));
 
+jest.mock('../../../src/middlewares/auth/auth-limiter', () => ({
+  authLimiter: jest.fn((req, res, next) => next()),
+}));
+
 import { authSessionsService } from '../../../src/modules/auth/auth-sessions/auth-sessions.service';
-import { signupController } from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
+import { authLimiter } from '../../../src/middlewares/auth/auth-limiter';
+import {
+  signupController,
+  signinController,
+} from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
 
 const mockSignup = authSessionsService.signup as jest.Mock;
+const mockSignin = authSessionsService.signin as jest.Mock;
+const mockAuthLimiter = authLimiter as unknown as jest.Mock;
 
 const validBody = {
   username: 'testuser',
@@ -38,6 +50,7 @@ function makeRes() {
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
     cookie: jest.fn().mockReturnThis(),
+    send: jest.fn().mockReturnThis(),
   } as unknown as Response;
 }
 
@@ -47,6 +60,7 @@ function makeNext() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockAuthLimiter.mockImplementation((req, res, next) => next());
 });
 
 describe('signupController', () => {
@@ -187,5 +201,233 @@ describe('signupController', () => {
 
     expect(next).toHaveBeenCalledWith(error);
     expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('returns 429 when the rate limit is exceeded and does not call the service', () => {
+    mockAuthLimiter.mockImplementation((_req, res) => {
+      res.status(429).send('Too many requests from this IP, please try again later.');
+    });
+
+    const req = { body: validBody } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      RegisterUserBody
+    >;
+    const res = makeRes();
+
+    mockAuthLimiter(req, res, jest.fn());
+
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(mockSignup).not.toHaveBeenCalled();
+  });
+});
+
+describe('signinController', () => {
+  const validSigninBodyByEmail: SigninRequestBody = {
+    email: 'test@example.com',
+    password: 'password123',
+  };
+
+  const validSigninBodyByUsername: SigninRequestBody = {
+    username: 'testuser',
+    password: 'password123',
+  };
+
+  it('returns 200 with user data on successful signin', async () => {
+    mockSignin.mockResolvedValue({
+      message: 'Signin successful',
+      user: mockUser,
+      session: mockSession,
+    });
+    const req = { body: validSigninBodyByEmail } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Signin successful',
+      data: { user: mockUser },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('sets the session cookie with the session id on successful signin', async () => {
+    mockSignin.mockResolvedValue({
+      message: 'Signin successful',
+      user: mockUser,
+      session: mockSession,
+    });
+    const req = { body: validSigninBodyByEmail } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.cookie).toHaveBeenCalledWith(
+      AUTH_SESSION_COOKIE_NAME,
+      mockSession.id,
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
+  it('passes the parsed body to the service when signing in by email', async () => {
+    mockSignin.mockResolvedValue({
+      message: 'Signin successful',
+      user: mockUser,
+      session: mockSession,
+    });
+    const req = { body: validSigninBodyByEmail } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(mockSignin).toHaveBeenCalledWith(validSigninBodyByEmail);
+  });
+
+  it('passes the parsed body to the service when signing in by username', async () => {
+    mockSignin.mockResolvedValue({
+      message: 'Signin successful',
+      user: mockUser,
+      session: mockSession,
+    });
+    const req = { body: validSigninBodyByUsername } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(mockSignin).toHaveBeenCalledWith(validSigninBodyByUsername);
+  });
+
+  it('returns 400 with VALIDATION_ERROR when neither email nor username is provided', async () => {
+    const req = { body: { password: 'password123' } } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
+      }),
+    );
+    expect(mockSignin).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 with VALIDATION_ERROR when body is empty', async () => {
+    const req = { body: {} } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
+      }),
+    );
+    expect(mockSignin).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 with VALIDATION_ERROR when email format is invalid', async () => {
+    const req = { body: { email: 'not-an-email', password: 'password123' } } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
+      }),
+    );
+    expect(mockSignin).not.toHaveBeenCalled();
+  });
+
+  it('includes validation details in the 400 response', async () => {
+    const req = { body: {} } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ details: expect.any(Array) }),
+      }),
+    );
+  });
+
+  it('calls next() with the error when the service throws', async () => {
+    const error = new Error('Unexpected error');
+    mockSignin.mockRejectedValue(error);
+    const req = { body: validSigninBodyByEmail } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('returns 429 when the rate limit is exceeded and does not call the service', () => {
+    mockAuthLimiter.mockImplementation((_req, res) => {
+      res.status(429).send('Too many requests from this IP, please try again later.');
+    });
+
+    const req = { body: validSigninBodyByEmail } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestBody
+    >;
+    const res = makeRes();
+
+    mockAuthLimiter(req, res, jest.fn());
+
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(mockSignin).not.toHaveBeenCalled();
   });
 });
