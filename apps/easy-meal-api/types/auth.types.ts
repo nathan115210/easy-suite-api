@@ -1,4 +1,5 @@
 import { AppError } from '@easy-suite/utils';
+import type { CookieOptions } from 'express';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -20,11 +21,14 @@ export type PublicUserData = Omit<User, 'password'>;
 
 export const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 export const AUTH_SESSION_COOKIE_NAME = 'authSessionId';
-export const AUTH_SESSION_HEADER_NAME = 'x-auth-session-id';
-export const AUTH_SESSION_RESPONSE_KEY = 'authSessionId';
-export const AUTHORIZATION_SCHEME = 'Bearer';
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MIN_LENGTH_MESSAGE = 'Username must be at least 3 characters';
+export const AUTH_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: SESSION_DURATION_MS,
+};
 
 export enum AuthErrorType {
   INTERNAL_ERROR = 'INTERNAL_ERROR',

@@ -1,21 +1,19 @@
 import {
-  type User,
+  type PublicUserData,
   type AuthSession,
   AuthError,
   AuthErrorType,
   RegisterUserBody,
   SESSION_DURATION_MS,
   SigninRequestBody,
-  USERNAME_MIN_LENGTH,
-  USERNAME_MIN_LENGTH_MESSAGE,
 } from '../../../../types/auth.types';
-import { isValidEmail, hashPassword, verifyPassword } from '../../../utils/auth-utils';
+import { hashPassword, toPublicUser, verifyPassword } from '../../../utils/auth-utils';
 import { userRepository } from '../../../db/user.repository';
 import { sessionRepository } from '../../../db/session.repository';
 
 type UserAuthServiceResult = {
   message: string;
-  user: Omit<User, 'password'>;
+  user: PublicUserData;
 };
 
 type UserAuthSessionServiceResult = UserAuthServiceResult & {
@@ -34,21 +32,6 @@ function isUniqueViolation(error: unknown): error is DbErrorLike {
 
 const signup = async (userData: RegisterUserBody): Promise<UserAuthSessionServiceResult> => {
   const { username, email, password } = userData;
-
-  if (!username || typeof username !== 'string' || username.trim().length < USERNAME_MIN_LENGTH) {
-    throw new AuthError(400, AuthErrorType.INVALID_USERNAME, USERNAME_MIN_LENGTH_MESSAGE);
-  }
-
-  if (!isValidEmail(email)) {
-    throw new AuthError(
-      400,
-      email ? AuthErrorType.INVALID_EMAIL : AuthErrorType.EMAIL_REQUIRED,
-      email ? 'Invalid email format' : 'Email is required',
-    );
-  }
-  if (!password) {
-    throw new AuthError(400, AuthErrorType.PASSWORD_REQUIRED, 'Password is required');
-  }
 
   // Check for existing user with the same email or username
   const existingUserByEmail = await userRepository.findByEmail(email);
@@ -111,14 +94,6 @@ const signin = async (
 ): Promise<UserAuthSessionServiceResult> => {
   const { email, username, password } = userCredentials;
 
-  if (!email && !username) {
-    throw new AuthError(400, AuthErrorType.VALIDATION_ERROR, 'Email or username is required');
-  }
-
-  if (!password) {
-    throw new AuthError(400, AuthErrorType.PASSWORD_REQUIRED, 'Password is required');
-  }
-
   const existingUser = email
     ? await userRepository.findByEmail(email)
     : await userRepository.findByUsername(username!);
@@ -142,11 +117,7 @@ const signin = async (
 
   return {
     message: 'Signin successful',
-    user: {
-      id: existingUser.id,
-      username: existingUser.username,
-      email: existingUser.email,
-    },
+    user: toPublicUser(existingUser),
     session: newSession,
   };
 };
@@ -159,11 +130,7 @@ const getUserProfile = async (userId: string): Promise<UserAuthServiceResult> =>
 
   return {
     message: 'User profile retrieved successfully',
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-    },
+    user: toPublicUser(user),
   };
 };
 

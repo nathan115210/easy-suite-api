@@ -12,6 +12,7 @@ import {
   isValidEmail,
   isStrongPassword,
   hashPassword,
+  toPublicUser,
   verifyPassword,
 } from '../../../src/utils/auth-utils';
 
@@ -96,5 +97,21 @@ describe('verifyPassword', () => {
     const result = await verifyPassword('A1b', 'hashed-value');
 
     expect(result).toBe(false);
+  });
+});
+
+describe('toPublicUser', () => {
+  it('returns only id, username, and email fields', () => {
+    const result = toPublicUser({
+      id: 'user-1',
+      username: 'johndoe',
+      email: 'john@example.com',
+    });
+
+    expect(result).toEqual({
+      id: 'user-1',
+      username: 'johndoe',
+      email: 'john@example.com',
+    });
   });
 });

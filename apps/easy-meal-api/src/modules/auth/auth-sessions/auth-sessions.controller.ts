@@ -3,7 +3,7 @@ import {
   UserAuthResponseBody,
   type ErrorResponseBody,
   AUTH_SESSION_COOKIE_NAME,
-  SESSION_DURATION_MS,
+  AUTH_COOKIE_OPTIONS,
   AuthErrorType,
   RegisterUserBody,
   SigninRequestBody,
@@ -31,12 +31,7 @@ export async function signupController(
 
   try {
     const result = await authSessionsService.signup(parsed.data);
-    res.cookie(AUTH_SESSION_COOKIE_NAME, result.session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_DURATION_MS,
-    });
+    res.cookie(AUTH_SESSION_COOKIE_NAME, result.session.id, AUTH_COOKIE_OPTIONS);
 
     res.status(201).json({
       message: result.message,
@@ -68,12 +63,7 @@ export async function signinController(
 
   try {
     const result = await authSessionsService.signin(parsed.data);
-    res.cookie(AUTH_SESSION_COOKIE_NAME, result.session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_DURATION_MS,
-    });
+    res.cookie(AUTH_SESSION_COOKIE_NAME, result.session.id, AUTH_COOKIE_OPTIONS);
 
     res.status(200).json({
       message: result.message,

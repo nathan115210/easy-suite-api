@@ -16,14 +16,18 @@ jest.mock('../../../src/db/session.repository', () => ({
 }));
 
 jest.mock('../../../src/utils/auth-utils', () => ({
-  isValidEmail: jest.fn(),
   hashPassword: jest.fn(),
   verifyPassword: jest.fn(),
+  toPublicUser: jest.fn((user: { id: string; username: string; email: string }) => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+  })),
 }));
 
 import { userRepository } from '../../../src/db/user.repository';
 import { sessionRepository } from '../../../src/db/session.repository';
-import { isValidEmail, hashPassword, verifyPassword } from '../../../src/utils/auth-utils';
+import { hashPassword, verifyPassword } from '../../../src/utils/auth-utils';
 import { authSessionsService } from '../../../src/modules/auth/auth-sessions/auth-sessions.service';
 
 const mockFindByEmail = userRepository.findByEmail as jest.Mock;
@@ -31,7 +35,6 @@ const mockFindByUsername = userRepository.findByUsername as jest.Mock;
 const mockFindById = userRepository.findById as jest.Mock;
 const mockCreateUser = userRepository.create as jest.Mock;
 const mockCreateSession = sessionRepository.createSession as jest.Mock;
-const mockIsValidEmail = isValidEmail as jest.Mock;
 const mockHashPassword = hashPassword as jest.Mock;
 const mockVerifyPassword = verifyPassword as jest.Mock;
 
@@ -64,7 +67,6 @@ const mockDbUser = {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  mockIsValidEmail.mockReturnValue(true);
   mockHashPassword.mockResolvedValue('hashed_password');
   mockFindByEmail.mockResolvedValue(null);
   mockFindByUsername.mockResolvedValue(null);
@@ -106,64 +108,6 @@ describe('authSessionsService.signup', () => {
     const [[sessionData]] = mockCreateSession.mock.calls;
     expect(sessionData.expiresAt).toBeInstanceOf(Date);
     expect(sessionData.expiresAt.getTime()).toBeGreaterThan(Date.now());
-  });
-
-  it('throws INVALID_USERNAME when username is shorter than 3 characters', async () => {
-    await expect(
-      authSessionsService.signup({ ...validUserData, username: 'ab' }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.INVALID_USERNAME,
-    });
-  });
-
-  it('throws INVALID_USERNAME when username is an empty string', async () => {
-    await expect(
-      authSessionsService.signup({ ...validUserData, username: '' }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.INVALID_USERNAME,
-    });
-  });
-
-  it('throws INVALID_USERNAME when username is only whitespace', async () => {
-    await expect(
-      authSessionsService.signup({ ...validUserData, username: '   ' }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.INVALID_USERNAME,
-    });
-  });
-
-  it('throws EMAIL_REQUIRED when email is an empty string', async () => {
-    mockIsValidEmail.mockReturnValue(false);
-
-    await expect(authSessionsService.signup({ ...validUserData, email: '' })).rejects.toMatchObject(
-      {
-        statusCode: 400,
-        code: AuthErrorType.EMAIL_REQUIRED,
-      },
-    );
-  });
-
-  it('throws PASSWORD_REQUIRED when password is an empty string', async () => {
-    await expect(
-      authSessionsService.signup({ ...validUserData, password: '' }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.PASSWORD_REQUIRED,
-    });
-  });
-
-  it('throws INVALID_EMAIL when email format is invalid', async () => {
-    mockIsValidEmail.mockReturnValue(false);
-
-    await expect(
-      authSessionsService.signup({ ...validUserData, email: 'not-an-email' }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.INVALID_EMAIL,
-    });
   });
 
   it('throws EMAIL_ALREADY_IN_USE when the email is already registered', async () => {
@@ -234,15 +178,6 @@ describe('authSessionsService.signup', () => {
 
     await expect(authSessionsService.signup(validUserData)).rejects.toBeInstanceOf(AuthError);
   });
-
-  it('does not create a user when validation fails', async () => {
-    await expect(
-      authSessionsService.signup({ ...validUserData, username: 'x' }),
-    ).rejects.toBeDefined();
-
-    expect(mockCreateUser).not.toHaveBeenCalled();
-    expect(mockCreateSession).not.toHaveBeenCalled();
-  });
 });
 
 describe('authSessionsService.signin', () => {
@@ -299,22 +234,6 @@ describe('authSessionsService.signin', () => {
     const [[sessionData]] = mockCreateSession.mock.calls;
     expect(sessionData.expiresAt).toBeInstanceOf(Date);
     expect(sessionData.expiresAt.getTime()).toBeGreaterThan(Date.now());
-  });
-
-  it('throws VALIDATION_ERROR when neither email nor username is provided', async () => {
-    await expect(authSessionsService.signin({ password: 'password123' })).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.VALIDATION_ERROR,
-    });
-  });
-
-  it('throws PASSWORD_REQUIRED when password is an empty string', async () => {
-    await expect(
-      authSessionsService.signin({ email: 'test@example.com', password: '' }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      code: AuthErrorType.PASSWORD_REQUIRED,
-    });
   });
 
   it('throws INVALID_CREDENTIALS when user is not found by email', async () => {
