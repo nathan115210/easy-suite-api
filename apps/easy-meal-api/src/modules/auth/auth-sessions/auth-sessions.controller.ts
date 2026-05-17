@@ -49,6 +49,19 @@ export async function signupController(
   }
 }
 
+/*
+  signin returns:
+    - user only
+    - authSessionId cookie
+
+  workflow:
+    1. find user by email/username
+    2. verify password
+    3. create new session row in DB
+    4. set authSessionId cookie
+5. return public user data
+**/
+
 export async function signinController(
   req: Request<Record<string, string>, unknown, SigninRequestInput>,
   res: Response<AuthSessionUserResponseBody | ErrorResponseBody>,

@@ -52,15 +52,19 @@ export const createAuthTokensForUser = async (
   accessTokenExpiresAt: Date;
   refreshTokenExpiresAt: Date;
 }> => {
+  //generate access token and refresh token
   const accessToken = generateOpaqueToken();
   const refreshToken = generateOpaqueToken();
 
+  // hash tokens before storing in DB
   const accessTokenHash = await hashToken(accessToken);
   const refreshTokenHash = await hashToken(refreshToken);
 
+  // calculate token expiration dates
   const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_DURATION_MS);
   const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_DURATION_MS);
 
+  //create token session row in DB with hashed tokens and expiration dates
   await sessionRepository.createTokenSession({
     userId,
     accessTokenHash,

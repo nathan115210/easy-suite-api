@@ -275,6 +275,167 @@ None.
 
 ---
 
+### Auth Token
+
+Token-based authentication using opaque access + refresh tokens. On success, the response includes an `accessToken` in JSON and a `refreshToken` as an HTTP-only cookie (TTL 7 days).
+
+#### `POST /v1/auth-token/signup`
+
+Registers a new user and issues an access token + refresh token cookie.
+
+**Request body**
+
+| Field      | Type   | Required | Constraints                                    |
+| ---------- | ------ | -------- | ---------------------------------------------- |
+| `username` | string | Yes      | 3–30 characters                                |
+| `email`    | string | Yes      | Valid email format                             |
+| `password` | string | Yes      | At least 3 chars, 1 uppercase letter, 1 number |
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "Secret1"
+}
+```
+
+**Response `201`**
+
+```json
+{
+  "message": "Signup successful",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    },
+    "accessToken": "opaque-access-token",
+    "accessTokenExpiresAt": "2026-01-01T00:15:00.000Z"
+  }
+}
+```
+
+The `refreshToken` is not returned in JSON. It is set as `Set-Cookie: refreshToken=<value>; HttpOnly; SameSite=Lax`.
+
+**Response `400`** — validation failure
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `409`** — duplicate email or username
+
+```json
+{
+  "error": {
+    "code": "EMAIL_ALREADY_IN_USE | USERNAME_ALREADY_IN_USE",
+    "message": "string"
+  }
+}
+```
+
+**Response `500`** — internal server error
+
+```json
+{
+  "error": {
+    "code": "PASSWORD_HASH_FAILED | DATABASE_ERROR | INTERNAL_ERROR",
+    "message": "string"
+  }
+}
+```
+
+---
+
+#### `POST /v1/auth-token/signin`
+
+Signs in an existing user and issues a new access token + refresh token cookie. Accepts an email, username, or a generic `identifier` field.
+
+**Request body**
+
+| Field        | Type   | Required | Constraints                              |
+| ------------ | ------ | -------- | ---------------------------------------- |
+| `identifier` | string | No       | Email or username (shorthand for either) |
+| `email`      | string | No       | Must be a valid email if provided        |
+| `username`   | string | No       | Username                                 |
+| `password`   | string | Yes      | Must match user credentials              |
+
+At least one of `identifier`, `email`, or `username` must be provided.
+
+```json
+{ "email": "john@example.com", "password": "Secret1" }
+```
+
+```json
+{ "username": "johndoe", "password": "Secret1" }
+```
+
+```json
+{ "identifier": "john@example.com", "password": "Secret1" }
+```
+
+**Response `200`**
+
+```json
+{
+  "message": "Signin successful",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "username": "johndoe",
+      "email": "john@example.com"
+    },
+    "accessToken": "opaque-access-token",
+    "accessTokenExpiresAt": "2026-01-01T00:15:00.000Z"
+  }
+}
+```
+
+Each successful signin creates a new session. Existing valid sessions are not invalidated.
+
+**Response `400`** — validation failure
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request body",
+    "details": []
+  }
+}
+```
+
+**Response `401`** — invalid credentials
+
+```json
+{
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Invalid email/username or password"
+  }
+}
+```
+
+**Response `500`** — internal server error
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Internal Server Error"
+  }
+}
+```
+
+---
+
 ### Meals
 
 #### `GET /v1/meals`

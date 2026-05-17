@@ -104,6 +104,13 @@ const signin = async (
   userCredentials: SigninRequestBody,
 ): Promise<UserAuthSessionServiceResult> => {
   const { identifier, password } = userCredentials;
+  if (!identifier?.trim()) {
+    throw new AuthError(400, AuthErrorType.VALIDATION_ERROR, 'Email/username is required');
+  }
+
+  if (!password) {
+    throw new AuthError(400, AuthErrorType.PASSWORD_REQUIRED, 'Password is required');
+  }
 
   // Determine if identifier is an email or username
   const isEmail = z.string().email().safeParse(identifier).success;

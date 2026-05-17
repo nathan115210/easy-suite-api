@@ -1,9 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AuthErrorType, AuthError } from '@/types/auth.types';
-import type { SignupRequestBody } from '@/modules/auth/auth-token/auth-token.schema';
+import type {
+  SignupRequestBody,
+  SigninRequestInput,
+} from '@/modules/auth/auth-token/auth-token.schema';
 
 jest.mock('@/modules/auth/auth-token/auth-token.service', () => ({
   tokenSignupService: jest.fn(),
+  tokenSigninService: jest.fn(),
 }));
 
 jest.mock('@/modules/auth/auth-token/auth-token.cookies', () => ({
@@ -11,11 +15,18 @@ jest.mock('@/modules/auth/auth-token/auth-token.cookies', () => ({
   clearRefreshTokenCookie: jest.fn(),
 }));
 
-import { tokenSignupService } from '@/modules/auth/auth-token/auth-token.service';
+import {
+  tokenSignupService,
+  tokenSigninService,
+} from '@/modules/auth/auth-token/auth-token.service';
 import { setRefreshTokenCookie } from '@/modules/auth/auth-token/auth-token.cookies';
-import { tokenSignupController } from '@/modules/auth/auth-token/auth-token.controller';
+import {
+  tokenSignupController,
+  tokenSigninController,
+} from '@/modules/auth/auth-token/auth-token.controller';
 
 const mockTokenSignupService = tokenSignupService as jest.Mock;
+const mockTokenSigninService = tokenSigninService as jest.Mock;
 const mockSetRefreshTokenCookie = setRefreshTokenCookie as jest.Mock;
 
 const validBody: SignupRequestBody = {
@@ -161,6 +172,129 @@ describe('tokenSignupController', () => {
     const next = makeNext();
 
     await tokenSignupController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+const validSigninBody: SigninRequestInput = {
+  identifier: 'test@example.com',
+  password: 'Password1',
+};
+
+const mockSigninServiceResult = {
+  message: 'Signin successful',
+  user: mockUser,
+  accessToken: 'opaque-access-token',
+  accessTokenExpiresAt: mockAccessTokenExpiresAt,
+  refreshToken: 'opaque-refresh-token',
+  refreshTokenExpiresAt: mockRefreshTokenExpiresAt,
+};
+
+describe('tokenSigninController', () => {
+  it('returns 200 with user and access token on successful signin', async () => {
+    mockTokenSigninService.mockResolvedValue(mockSigninServiceResult);
+    const req = { body: validSigninBody } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestInput
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await tokenSigninController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Signin successful',
+      data: {
+        user: mockUser,
+        accessToken: 'opaque-access-token',
+        accessTokenExpiresAt: mockAccessTokenExpiresAt,
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('sets the refresh token cookie on successful signin', async () => {
+    mockTokenSigninService.mockResolvedValue(mockSigninServiceResult);
+    const req = { body: validSigninBody } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestInput
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await tokenSigninController(req, res, next);
+
+    expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(res, 'opaque-refresh-token');
+  });
+
+  it('passes the parsed (transformed) credentials to the service', async () => {
+    mockTokenSigninService.mockResolvedValue(mockSigninServiceResult);
+    const req = {
+      body: { email: 'test@example.com', password: 'Password1' },
+    } as unknown as Request<Record<string, string>, unknown, SigninRequestInput>;
+    const res = makeRes();
+    const next = makeNext();
+
+    await tokenSigninController(req, res, next);
+
+    expect(mockTokenSigninService).toHaveBeenCalledWith({
+      identifier: 'test@example.com',
+      password: 'Password1',
+    });
+  });
+
+  it('returns 400 with VALIDATION_ERROR when no identifier, email, or username is provided', async () => {
+    const req = {
+      body: { password: 'Password1' },
+    } as unknown as Request<Record<string, string>, unknown, SigninRequestInput>;
+    const res = makeRes();
+    const next = makeNext();
+
+    await tokenSigninController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
+      }),
+    );
+    expect(mockTokenSigninService).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 with VALIDATION_ERROR when password is missing', async () => {
+    const req = {
+      body: { identifier: 'test@example.com' },
+    } as unknown as Request<Record<string, string>, unknown, SigninRequestInput>;
+    const res = makeRes();
+    const next = makeNext();
+
+    await tokenSigninController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: AuthErrorType.VALIDATION_ERROR }),
+      }),
+    );
+  });
+
+  it('calls next with the error when the service throws', async () => {
+    const error = new AuthError(401, AuthErrorType.INVALID_CREDENTIALS, 'Invalid credentials');
+    mockTokenSigninService.mockRejectedValue(error);
+    const req = { body: validSigninBody } as unknown as Request<
+      Record<string, string>,
+      unknown,
+      SigninRequestInput
+    >;
+    const res = makeRes();
+    const next = makeNext();
+
+    await tokenSigninController(req, res, next);
 
     expect(next).toHaveBeenCalledWith(error);
     expect(res.status).not.toHaveBeenCalled();
