@@ -10,6 +10,11 @@ import type {
   SigninRequestBody,
 } from '../../../src/modules/auth/auth-sessions/auth-sessions.schema';
 
+jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.cookies', () => ({
+  setSessionCookie: jest.fn(),
+  clearSessionCookie: jest.fn(),
+}));
+
 jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () => ({
   authSessionsService: {
     signup: jest.fn(),
@@ -29,6 +34,10 @@ jest.mock('../../../src/db/session.repository', () => ({
   },
 }));
 
+import {
+  setSessionCookie,
+  clearSessionCookie,
+} from '../../../src/modules/auth/auth-sessions/auth-sessions.cookies';
 import { authSessionsService } from '../../../src/modules/auth/auth-sessions/auth-sessions.service';
 import { authLimiter } from '../../../src/middlewares/auth/auth-limiter';
 import { sessionRepository } from '../../../src/db/session.repository';
@@ -39,6 +48,8 @@ import {
   signoutController,
 } from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
 
+const mockSetSessionCookie = setSessionCookie as jest.Mock;
+const mockClearSessionCookie = clearSessionCookie as jest.Mock;
 const mockSignup = authSessionsService.signup as jest.Mock;
 const mockSignin = authSessionsService.signin as jest.Mock;
 const mockGetUserProfile = authSessionsService.getUserProfile as jest.Mock;
@@ -68,7 +79,6 @@ function makeRes() {
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
     cookie: jest.fn().mockReturnThis(),
-    clearCookie: jest.fn().mockReturnThis(),
     send: jest.fn().mockReturnThis(),
   } as unknown as Response;
 }
@@ -125,11 +135,7 @@ describe('signupController', () => {
 
     await signupController(req, res, next);
 
-    expect(res.cookie).toHaveBeenCalledWith(
-      AUTH_SESSION_COOKIE_NAME,
-      mockSession.id,
-      expect.objectContaining({ httpOnly: true }),
-    );
+    expect(mockSetSessionCookie).toHaveBeenCalledWith(res, mockSession.id);
   });
 
   it('passes the parsed body to the service', async () => {
@@ -294,11 +300,7 @@ describe('signinController', () => {
 
     await signinController(req, res, next);
 
-    expect(res.cookie).toHaveBeenCalledWith(
-      AUTH_SESSION_COOKIE_NAME,
-      mockSession.id,
-      expect.objectContaining({ httpOnly: true }),
-    );
+    expect(mockSetSessionCookie).toHaveBeenCalledWith(res, mockSession.id);
   });
 
   it('passes the parsed body to the service when signing in with email identifier', async () => {
@@ -549,7 +551,7 @@ describe('signoutController', () => {
     expect(mockSignout).toHaveBeenCalledWith('session-id-abc123');
   });
 
-  it('clears the auth session cookie', async () => {
+  it('clears the session cookie', async () => {
     const req = {
       cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
     } as unknown as Request;
@@ -558,24 +560,7 @@ describe('signoutController', () => {
 
     await signoutController(req, res, next);
 
-    expect((res as unknown as { clearCookie: jest.Mock }).clearCookie).toHaveBeenCalledWith(
-      AUTH_SESSION_COOKIE_NAME,
-      expect.any(Object),
-    );
-  });
-
-  it('clears the cookie without maxAge', async () => {
-    const req = {
-      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
-    } as unknown as Request;
-    const res = makeRes();
-    const next = makeNext();
-
-    await signoutController(req, res, next);
-
-    const clearCookieMock = (res as unknown as { clearCookie: jest.Mock }).clearCookie;
-    const [, clearOptions] = clearCookieMock.mock.calls[0];
-    expect(clearOptions).not.toHaveProperty('maxAge');
+    expect(mockClearSessionCookie).toHaveBeenCalledWith(res);
   });
 
   it('returns 200 and calls signout with undefined when no session cookie is present', async () => {
@@ -605,21 +590,21 @@ describe('signoutController', () => {
 
     await signoutController(req, res, next);
 
-    expect(res.clearCookie).toHaveBeenCalled();
+    expect(mockClearSessionCookie).toHaveBeenCalledWith(res);
     expect(next).toHaveBeenCalledWith(signoutError);
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('calls next() with the error when res.clearCookie throws unexpectedly', async () => {
-    const unexpectedError = new Error('Unexpected clearCookie failure');
+  it('calls next() with the error when clearSessionCookie throws unexpectedly', async () => {
+    const unexpectedError = new Error('Unexpected clearSessionCookie failure');
     const req = {
       cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
     } as unknown as Request;
     const res = makeRes();
-    (res as unknown as { clearCookie: jest.Mock }).clearCookie.mockImplementation(() => {
+    const next = makeNext();
+    mockClearSessionCookie.mockImplementationOnce(() => {
       throw unexpectedError;
     });
-    const next = makeNext();
 
     await signoutController(req, res, next);
 

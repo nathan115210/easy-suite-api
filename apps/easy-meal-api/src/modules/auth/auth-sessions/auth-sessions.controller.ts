@@ -2,13 +2,12 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   type ErrorResponseBody,
   AUTH_SESSION_COOKIE_NAME,
-  AUTH_CLEAR_COOKIE_OPTIONS,
   AuthErrorType,
   AuthError,
   sendAuthUser,
-  setAuthSessionCookie,
   type UserAuthResponseBody,
 } from '../../../../types/auth.types';
+import { setSessionCookie, clearSessionCookie } from './auth-sessions.cookies';
 import { authSessionsService } from './auth-sessions.service';
 import { sessionRepository } from '../../../db/session.repository';
 import {
@@ -37,7 +36,7 @@ export async function signupController(
 
   try {
     const result = await authSessionsService.signup(parsed.data);
-    setAuthSessionCookie(res, result.session.id);
+    setSessionCookie(res, result.session.id);
     sendAuthUser(res, 201, result.message, result.user);
   } catch (error) {
     next(error);
@@ -63,7 +62,7 @@ export async function signinController(
 
   try {
     const result = await authSessionsService.signin(parsed.data);
-    setAuthSessionCookie(res, result.session.id);
+    setSessionCookie(res, result.session.id);
     sendAuthUser(res, 200, result.message, result.user);
   } catch (error) {
     next(error);
@@ -105,7 +104,7 @@ export async function signoutController(
   try {
     const sessionId = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
 
-    res.clearCookie(AUTH_SESSION_COOKIE_NAME, AUTH_CLEAR_COOKIE_OPTIONS);
+    clearSessionCookie(res);
 
     await authSessionsService.signout(sessionId);
 
