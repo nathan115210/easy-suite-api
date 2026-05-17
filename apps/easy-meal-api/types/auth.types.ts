@@ -1,5 +1,5 @@
 import { AppError } from '@easy-suite/utils';
-import type { CookieOptions, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -24,17 +24,6 @@ export const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 export const AUTH_SESSION_COOKIE_NAME = 'authSessionId';
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MIN_LENGTH_MESSAGE = 'Username must be at least 3 characters';
-export const AUTH_CLEAR_COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  path: '/',
-};
-
-export const AUTH_COOKIE_OPTIONS: CookieOptions = {
-  ...AUTH_CLEAR_COOKIE_OPTIONS,
-  maxAge: SESSION_DURATION_MS,
-};
 
 export enum AuthErrorType {
   INTERNAL_ERROR = 'INTERNAL_ERROR',
@@ -100,11 +89,4 @@ export function sendAuthUser(
     message,
     data: { user },
   });
-}
-
-/**
- * Helper to set auth session cookie with consistent options
- */
-export function setAuthSessionCookie(res: Response, sessionId: string) {
-  res.cookie(AUTH_SESSION_COOKIE_NAME, sessionId, AUTH_COOKIE_OPTIONS);
 }

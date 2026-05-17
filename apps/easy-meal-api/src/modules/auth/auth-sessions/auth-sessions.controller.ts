@@ -2,20 +2,19 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   type ErrorResponseBody,
   AUTH_SESSION_COOKIE_NAME,
-  AUTH_CLEAR_COOKIE_OPTIONS,
   AuthErrorType,
   AuthError,
   sendAuthUser,
-  setAuthSessionCookie,
   type UserAuthResponseBody,
 } from '../../../../types/auth.types';
+import { setSessionCookie, clearSessionCookie } from './auth-sessions.cookies';
 import { authSessionsService } from './auth-sessions.service';
 import { sessionRepository } from '../../../db/session.repository';
 import {
   SignupRequestSchema,
   SigninRequestSchema,
   type SignupRequestBody,
-  type SigninRequestBody,
+  type SigninRequestInput,
 } from './auth-sessions.schema';
 
 export async function signupController(
@@ -37,7 +36,7 @@ export async function signupController(
 
   try {
     const result = await authSessionsService.signup(parsed.data);
-    setAuthSessionCookie(res, result.session.id);
+    setSessionCookie(res, result.session.id);
     sendAuthUser(res, 201, result.message, result.user);
   } catch (error) {
     next(error);
@@ -45,7 +44,7 @@ export async function signupController(
 }
 
 export async function signinController(
-  req: Request<Record<string, string>, unknown, SigninRequestBody>,
+  req: Request<Record<string, string>, unknown, SigninRequestInput>,
   res: Response<UserAuthResponseBody | ErrorResponseBody>,
   next: NextFunction,
 ): Promise<void> {
@@ -63,7 +62,7 @@ export async function signinController(
 
   try {
     const result = await authSessionsService.signin(parsed.data);
-    setAuthSessionCookie(res, result.session.id);
+    setSessionCookie(res, result.session.id);
     sendAuthUser(res, 200, result.message, result.user);
   } catch (error) {
     next(error);
@@ -76,15 +75,21 @@ export async function getProfileController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const user = await authSessionsService.getUserProfile(req.userId!);
+    const userId = req.userId;
+    if (!userId) {
+      throw new AuthError(
+        401,
+        AuthErrorType.SESSION_MISSING,
+        'Authentication session missing or invalid',
+      );
+    }
+    const user = await authSessionsService.getUserProfile(userId);
     sendAuthUser(res, 200, user.message, user.user);
   } catch (error) {
     if (error instanceof AuthError && error.code === AuthErrorType.USER_NOT_FOUND) {
       const sessionId = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
       if (sessionId) {
-        await sessionRepository.deleteById(sessionId).catch((cleanupError) => {
-          req.log?.warn?.({ err: cleanupError, sessionId }, 'Failed to delete stale auth session');
-        });
+        await sessionRepository.deleteById(sessionId).catch(() => {});
       }
 
       next(
@@ -105,12 +110,39 @@ export async function signoutController(
   try {
     const sessionId = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
 
-    res.clearCookie(AUTH_SESSION_COOKIE_NAME, AUTH_CLEAR_COOKIE_OPTIONS);
+    clearSessionCookie(res);
 
     await authSessionsService.signout(sessionId);
 
     res.status(200).json({
       message: 'Signout successful',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function signoutAllController(
+  req: Request,
+  res: Response<{ message: string } | ErrorResponseBody>,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AuthError(
+        401,
+        AuthErrorType.SESSION_MISSING,
+        'Authentication session missing or invalid',
+      );
+    }
+
+    await authSessionsService.signoutAll(userId);
+
+    clearSessionCookie(res);
+
+    res.status(200).json({
+      message: 'Signed out from all sessions',
     });
   } catch (error) {
     next(error);
