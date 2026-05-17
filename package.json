@@ -30,7 +30,8 @@
     "dev:db": "docker compose up -d postgres",
     "dev:db:down": "docker compose down",
     "dev:db:reset": "docker compose down -v && docker compose up -d postgres",
-    "prepare": "husky"
+    "prepare": "husky",
+    "pr:check": "pnpm git:check-branch && pnpm lint && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

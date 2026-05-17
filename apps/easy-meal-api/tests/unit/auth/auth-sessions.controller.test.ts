@@ -15,6 +15,7 @@ jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () =>
     signup: jest.fn(),
     signin: jest.fn(),
     getUserProfile: jest.fn(),
+    signout: jest.fn(),
   },
 }));
 
@@ -35,11 +36,13 @@ import {
   signupController,
   signinController,
   getProfileController,
+  signoutController,
 } from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
 
 const mockSignup = authSessionsService.signup as jest.Mock;
 const mockSignin = authSessionsService.signin as jest.Mock;
 const mockGetUserProfile = authSessionsService.getUserProfile as jest.Mock;
+const mockSignout = authSessionsService.signout as jest.Mock;
 const mockAuthLimiter = authLimiter as unknown as jest.Mock;
 const mockDeleteSessionById = sessionRepository.deleteById as jest.Mock;
 
@@ -65,6 +68,7 @@ function makeRes() {
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
     cookie: jest.fn().mockReturnThis(),
+    clearCookie: jest.fn().mockReturnThis(),
     send: jest.fn().mockReturnThis(),
   } as unknown as Response;
 }
@@ -76,6 +80,7 @@ function makeNext() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockDeleteSessionById.mockResolvedValue(undefined);
+  mockSignout.mockResolvedValue(undefined);
   mockAuthLimiter.mockImplementation((req, res, next) => next());
 });
 
@@ -513,6 +518,112 @@ describe('getProfileController', () => {
     await getProfileController(req, res, next);
 
     expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe('signoutController', () => {
+  it('returns 200 with signout message when session cookie is present', async () => {
+    const req = {
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
+    } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Signout successful' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('calls authSessionsService.signout with the session id from the cookie', async () => {
+    const req = {
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
+    } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    expect(mockSignout).toHaveBeenCalledWith('session-id-abc123');
+  });
+
+  it('clears the auth session cookie', async () => {
+    const req = {
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
+    } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    expect((res as unknown as { clearCookie: jest.Mock }).clearCookie).toHaveBeenCalledWith(
+      AUTH_SESSION_COOKIE_NAME,
+      expect.any(Object),
+    );
+  });
+
+  it('clears the cookie without maxAge', async () => {
+    const req = {
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
+    } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    const clearCookieMock = (res as unknown as { clearCookie: jest.Mock }).clearCookie;
+    const [, clearOptions] = clearCookieMock.mock.calls[0];
+    expect(clearOptions).not.toHaveProperty('maxAge');
+  });
+
+  it('returns 200 and calls signout with undefined when no session cookie is present', async () => {
+    const req = { cookies: {} } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    expect(mockSignout).toHaveBeenCalledWith(undefined);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Signout successful' });
+  });
+
+  it('calls next() with AuthError when authSessionsService.signout throws', async () => {
+    const signoutError = new AuthError(
+      500,
+      AuthErrorType.DATABASE_ERROR,
+      'Failed to delete session on signout',
+    );
+    mockSignout.mockRejectedValue(signoutError);
+    const req = {
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
+    } as unknown as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    expect(res.clearCookie).toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(signoutError);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('calls next() with the error when res.clearCookie throws unexpectedly', async () => {
+    const unexpectedError = new Error('Unexpected clearCookie failure');
+    const req = {
+      cookies: { [AUTH_SESSION_COOKIE_NAME]: 'session-id-abc123' },
+    } as unknown as Request;
+    const res = makeRes();
+    (res as unknown as { clearCookie: jest.Mock }).clearCookie.mockImplementation(() => {
+      throw unexpectedError;
+    });
+    const next = makeNext();
+
+    await signoutController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(unexpectedError);
     expect(res.status).not.toHaveBeenCalled();
   });
 });
