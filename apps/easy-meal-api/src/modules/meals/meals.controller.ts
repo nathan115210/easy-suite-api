@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { ApiSuccess, ApiError } from '@easy-suite/utils';
-import { getAllMeals, getMealById, updateMeal, createMeal } from './meals.service';
+import { getAllMeals, getMealById, updateMeal, createMeal } from '@/modules/meals/meals.service';
 import {
   MealSearchQuerySchema,
   UpdateMealBodySchema,
@@ -8,7 +8,7 @@ import {
   type MealDetail,
   type AddMealBody,
   AddMealBodySchema,
-} from './meals.schema';
+} from '@/modules/meals/meals.schema';
 
 export async function getAllMealsController(
   req: Request,

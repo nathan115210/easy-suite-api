@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import { AUTH_SESSION_COOKIE_NAME, AuthError, AuthErrorType } from '../../../../types/auth.types';
-import { sessionRepository } from '../../../db/session.repository';
+import { AUTH_SESSION_COOKIE_NAME, AuthError, AuthErrorType } from '@/types/auth.types';
+import { sessionRepository } from '@/db/session.repository';
 
 export async function requireAuthSessions(
   req: Request,

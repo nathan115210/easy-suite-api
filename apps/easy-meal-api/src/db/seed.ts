@@ -1,5 +1,5 @@
-import { db, pool } from './index';
-import { seedMeals } from './schema/meals.seed';
+import { db, pool } from '@/db/index';
+import { seedMeals } from '@/db/schema/meals.seed';
 
 async function main() {
   const result = await seedMeals(db);

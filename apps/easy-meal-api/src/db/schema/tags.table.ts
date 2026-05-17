@@ -1,5 +1,5 @@
 import { index, pgTable, primaryKey, timestamp, uuid, varchar, integer } from 'drizzle-orm/pg-core';
-import { mealsTable } from './meals.table';
+import { mealsTable } from '@/db/schema/meals.table';
 
 export const tags = pgTable(
   'tags',

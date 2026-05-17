@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { mealsRouter } from '../modules/meals/meals.routes';
-import { authSessionsRouter } from '../modules/auth/auth-sessions/auth-sessions.router';
+import { mealsRouter } from '@/modules/meals/meals.routes';
+import { authSessionsRouter } from '@/modules/auth/auth-sessions/auth-sessions.router';
 
 export const v1Router = Router();
 

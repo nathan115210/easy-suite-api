@@ -4,19 +4,19 @@ import {
   AuthError,
   AUTH_SESSION_COOKIE_NAME,
   type AuthenticatedRequest,
-} from '../../../types/auth.types';
+} from '@/types/auth.types';
 import type {
   SignupRequestBody,
   SigninRequestBody,
   SigninRequestInput,
-} from '../../../src/modules/auth/auth-sessions/auth-sessions.schema';
+} from '@/modules/auth/auth-sessions/auth-sessions.schema';
 
-jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.cookies', () => ({
+jest.mock('@/modules/auth/auth-sessions/auth-sessions.cookies', () => ({
   setSessionCookie: jest.fn(),
   clearSessionCookie: jest.fn(),
 }));
 
-jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () => ({
+jest.mock('@/modules/auth/auth-sessions/auth-sessions.service', () => ({
   authSessionsService: {
     signup: jest.fn(),
     signin: jest.fn(),
@@ -26,11 +26,11 @@ jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () =>
   },
 }));
 
-jest.mock('../../../src/middlewares/auth/auth-limiter', () => ({
+jest.mock('@/middlewares/auth/auth-limiter', () => ({
   authLimiter: jest.fn((req, res, next) => next()),
 }));
 
-jest.mock('../../../src/db/session.repository', () => ({
+jest.mock('@/db/session.repository', () => ({
   sessionRepository: {
     deleteById: jest.fn(),
   },
@@ -39,17 +39,17 @@ jest.mock('../../../src/db/session.repository', () => ({
 import {
   setSessionCookie,
   clearSessionCookie,
-} from '../../../src/modules/auth/auth-sessions/auth-sessions.cookies';
-import { authSessionsService } from '../../../src/modules/auth/auth-sessions/auth-sessions.service';
-import { authLimiter } from '../../../src/middlewares/auth/auth-limiter';
-import { sessionRepository } from '../../../src/db/session.repository';
+} from '@/modules/auth/auth-sessions/auth-sessions.cookies';
+import { authSessionsService } from '@/modules/auth/auth-sessions/auth-sessions.service';
+import { authLimiter } from '@/middlewares/auth/auth-limiter';
+import { sessionRepository } from '@/db/session.repository';
 import {
   signupController,
   signinController,
   getProfileController,
   signoutController,
   signoutAllController,
-} from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
+} from '@/modules/auth/auth-sessions/auth-sessions.controller';
 
 const mockSetSessionCookie = setSessionCookie as jest.Mock;
 const mockClearSessionCookie = clearSessionCookie as jest.Mock;

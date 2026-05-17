@@ -1,4 +1,4 @@
-import { validateUuidParam } from '../../../src/middlewares/validate-uuid-param';
+import { validateUuidParam } from '@/middlewares/validate-uuid-param';
 import type { Request, Response, NextFunction } from 'express';
 
 function makeReqResNext(paramValue: string, paramName = 'id') {

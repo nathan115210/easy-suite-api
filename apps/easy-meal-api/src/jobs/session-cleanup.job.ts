@@ -1,6 +1,6 @@
 import { logger } from '@easy-suite/utils';
-import { env } from '../config/env';
-import { sessionRepository } from '../db/session.repository';
+import { env } from '@/config/env';
+import { sessionRepository } from '@/db/session.repository';
 
 let cleanupTimer: NodeJS.Timeout | null = null;
 

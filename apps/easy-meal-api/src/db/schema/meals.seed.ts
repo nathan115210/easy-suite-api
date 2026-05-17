@@ -1,14 +1,14 @@
 import { inArray } from 'drizzle-orm';
-import type { DifficultyLevel, Meal } from '../../../types/meals.types';
-import { DifficultyLevel as DifficultyLevelValue, MealType } from '../../../types/meals.types';
-import type { db } from '../index';
-import { slugify } from '../../utils/slugify';
-import { mealIngredientsTable } from './meal-ingredients.table';
-import { mealInstructionsTable } from './meal-instructions.table';
-import { mealTypesTable } from './meal-types.table';
-import { mealNutritionTable } from './meal-nutrition.table';
-import { mealsTable } from './meals.table';
-import { mealTags, tags as tagsTable } from './tags.table';
+import type { DifficultyLevel, Meal } from '@/types/meals.types';
+import { DifficultyLevel as DifficultyLevelValue, MealType } from '@/types/meals.types';
+import type { db } from '@/db/index';
+import { slugify } from '@/utils/slugify';
+import { mealIngredientsTable } from '@/db/schema/meal-ingredients.table';
+import { mealInstructionsTable } from '@/db/schema/meal-instructions.table';
+import { mealTypesTable } from '@/db/schema/meal-types.table';
+import { mealNutritionTable } from '@/db/schema/meal-nutrition.table';
+import { mealsTable } from '@/db/schema/meals.table';
+import { mealTags, tags as tagsTable } from '@/db/schema/tags.table';
 
 export type SeedMealsResult = {
   inserted: number;

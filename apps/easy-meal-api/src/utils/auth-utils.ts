@@ -1,5 +1,5 @@
 import argon2 from 'argon2';
-import type { PublicUserData } from '../../types/auth.types';
+import type { PublicUserData } from '@/types/auth.types';
 
 export const hashPassword = async (password: string): Promise<string> =>
   argon2.hash(password, {

@@ -1,14 +1,14 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AuthErrorType, AUTH_SESSION_COOKIE_NAME } from '../../../types/auth.types';
+import { AuthErrorType, AUTH_SESSION_COOKIE_NAME } from '@/types/auth.types';
 
-jest.mock('../../../src/db/session.repository', () => ({
+jest.mock('@/db/session.repository', () => ({
   sessionRepository: {
     findValidSessionById: jest.fn(),
   },
 }));
 
-import { sessionRepository } from '../../../src/db/session.repository';
-import { requireAuthSessions } from '../../../src/middlewares/auth/auth-session/requireAuthSessions';
+import { sessionRepository } from '@/db/session.repository';
+import { requireAuthSessions } from '@/middlewares/auth/auth-session/requireAuthSessions';
 
 const mockFindValidSessionById = sessionRepository.findValidSessionById as jest.Mock;
 

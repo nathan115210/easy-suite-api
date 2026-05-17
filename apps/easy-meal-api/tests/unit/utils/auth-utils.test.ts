@@ -8,7 +8,7 @@ jest.mock('argon2', () => ({
 }));
 
 import argon2 from 'argon2';
-import { hashPassword, toPublicUser, verifyPassword } from '../../../src/utils/auth-utils';
+import { hashPassword, toPublicUser, verifyPassword } from '@/utils/auth-utils';
 
 const mockArgon2Hash = argon2.hash as jest.Mock;
 const mockArgon2Verify = argon2.verify as jest.Mock;

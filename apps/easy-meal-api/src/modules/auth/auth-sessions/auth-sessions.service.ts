@@ -4,15 +4,18 @@ import {
   AuthError,
   AuthErrorType,
   SESSION_DURATION_MS,
-} from '../../../../types/auth.types';
+} from '@/types/auth.types';
 import { logger } from '@easy-suite/utils';
 import { z } from 'zod';
-import type { SignupRequestBody, SigninRequestBody } from './auth-sessions.schema';
-import { hashPassword, toPublicUser, verifyPassword } from '../../../utils/auth-utils';
-import { userRepository } from '../../../db/user.repository';
-import { sessionRepository } from '../../../db/session.repository';
-import { db } from '../../../db';
-import type { DbExecutor } from '../../../db/types';
+import type {
+  SignupRequestBody,
+  SigninRequestBody,
+} from '@/modules/auth/auth-sessions/auth-sessions.schema';
+import { hashPassword, toPublicUser, verifyPassword } from '@/utils/auth-utils';
+import { userRepository } from '@/db/user.repository';
+import { sessionRepository } from '@/db/session.repository';
+import { db } from '@/db';
+import type { DbExecutor } from '@/db/types';
 
 type UserAuthServiceResult = {
   message: string;

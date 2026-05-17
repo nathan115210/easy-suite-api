@@ -6,16 +6,19 @@ import {
   AuthError,
   sendAuthUser,
   type UserAuthResponseBody,
-} from '../../../../types/auth.types';
-import { setSessionCookie, clearSessionCookie } from './auth-sessions.cookies';
-import { authSessionsService } from './auth-sessions.service';
-import { sessionRepository } from '../../../db/session.repository';
+} from '@/types/auth.types';
+import {
+  setSessionCookie,
+  clearSessionCookie,
+} from '@/modules/auth/auth-sessions/auth-sessions.cookies';
+import { authSessionsService } from '@/modules/auth/auth-sessions/auth-sessions.service';
+import { sessionRepository } from '@/db/session.repository';
 import {
   SignupRequestSchema,
   SigninRequestSchema,
   type SignupRequestBody,
   type SigninRequestInput,
-} from './auth-sessions.schema';
+} from '@/modules/auth/auth-sessions/auth-sessions.schema';
 
 export async function signupController(
   req: Request<Record<string, string>, unknown, SignupRequestBody>,

@@ -7,11 +7,11 @@ const mockDeleteExpiredSessions = jest.fn();
 const mockLoggerInfo = jest.fn();
 const mockLoggerError = jest.fn();
 
-jest.mock('../../../src/config/env', () => ({
+jest.mock('@/config/env', () => ({
   env: mockEnv,
 }));
 
-jest.mock('../../../src/db/session.repository', () => ({
+jest.mock('@/db/session.repository', () => ({
   sessionRepository: {
     deleteExpiredSessions: mockDeleteExpiredSessions,
   },
@@ -24,10 +24,7 @@ jest.mock('@easy-suite/utils', () => ({
   },
 }));
 
-import {
-  startSessionCleanupJob,
-  stopSessionCleanupJob,
-} from '../../../src/jobs/session-cleanup.job';
+import { startSessionCleanupJob, stopSessionCleanupJob } from '@/jobs/session-cleanup.job';
 
 describe('session cleanup job', () => {
   beforeEach(() => {

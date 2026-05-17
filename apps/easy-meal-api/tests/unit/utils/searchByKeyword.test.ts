@@ -1,11 +1,11 @@
-jest.mock('../../../src/db/index', () => ({
+jest.mock('@/db/index', () => ({
   db: { select: jest.fn() },
   pool: {},
 }));
 
-import { db } from '../../../src/db/index';
-import { mealsTable } from '../../../src/db/schema';
-import { searchByKeyword, searchByKeywordCondition } from '../../../src/utils/searchByKeyword';
+import { db } from '@/db/index';
+import { mealsTable } from '@/db/schema';
+import { searchByKeyword, searchByKeywordCondition } from '@/utils/searchByKeyword';
 
 const mockSelect = db.select as jest.Mock;
 

@@ -3,6 +3,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "types": ["node", "jest"]
   },
   "include": ["src", "tests", "drizzle.config.ts", "jest.config.ts"]

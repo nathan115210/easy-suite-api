@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import { AUTH_SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '../../../../types/auth.types';
+import { AUTH_SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/types/auth.types';
 
 const sessionCookieOptions = {
   httpOnly: true,

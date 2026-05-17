@@ -1,26 +1,21 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { Meal } from '../../../src/modules/meals/meals.schema';
-import { MealType } from '../../../types/meals.types';
+import type { Meal } from '@/modules/meals/meals.schema';
+import { MealType } from '@/types/meals.types';
 
-jest.mock('../../../src/modules/meals/meals.service', () => ({
+jest.mock('@/modules/meals/meals.service', () => ({
   getAllMeals: jest.fn(),
   getMealById: jest.fn(),
   updateMeal: jest.fn(),
   createMeal: jest.fn(),
 }));
 
-import {
-  getAllMeals,
-  getMealById,
-  updateMeal,
-  createMeal,
-} from '../../../src/modules/meals/meals.service';
+import { getAllMeals, getMealById, updateMeal, createMeal } from '@/modules/meals/meals.service';
 import {
   getAllMealsController,
   getMealByIdController,
   updateMealController,
   addMealController,
-} from '../../../src/modules/meals/meals.controller';
+} from '@/modules/meals/meals.controller';
 
 const mockGetAllMeals = getAllMeals as jest.Mock;
 const mockGetMealById = getMealById as jest.Mock;

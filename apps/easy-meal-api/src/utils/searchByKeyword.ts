@@ -1,7 +1,7 @@
 import { sql, type InferSelectModel, type Column, type SQL } from 'drizzle-orm';
 import type { AnyPgTable } from 'drizzle-orm/pg-core';
 import { getTableName as getDrizzleTableName } from 'drizzle-orm/table';
-import { db } from '../db';
+import { db } from '@/db';
 
 export type SearchMode = 'any' | 'all' | 'phrase' | 'web';
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { registry } from '../../../openapi/registry';
-import { USERNAME_MIN_LENGTH, USERNAME_MIN_LENGTH_MESSAGE } from '../../../../types/auth.types';
+import { registry } from '@/openapi/registry';
+import { USERNAME_MIN_LENGTH, USERNAME_MIN_LENGTH_MESSAGE } from '@/types/auth.types';
 
 export const SignupRequestSchema = registry.register(
   'SignupRequest',

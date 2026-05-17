@@ -1,4 +1,4 @@
-import { slugify } from '../../../src/utils/slugify';
+import { slugify } from '@/utils/slugify';
 
 describe('slugify', () => {
   it('lowercases the input', () => {

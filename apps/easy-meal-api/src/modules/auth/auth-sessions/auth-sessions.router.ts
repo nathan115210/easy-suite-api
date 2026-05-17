@@ -5,10 +5,10 @@ import {
   getProfileController,
   signoutController,
   signoutAllController,
-} from './auth-sessions.controller';
-import { authLimiter, authReadLimiter } from '../../../middlewares/auth/auth-limiter';
-import './auth-sessions.schema';
-import { requireAuthSessions } from '../../../middlewares/auth/auth-session/requireAuthSessions';
+} from '@/modules/auth/auth-sessions/auth-sessions.controller';
+import { authLimiter, authReadLimiter } from '@/middlewares/auth/auth-limiter';
+import '@/modules/auth/auth-sessions/auth-sessions.schema';
+import { requireAuthSessions } from '@/middlewares/auth/auth-session/requireAuthSessions';
 
 export const authSessionsRouter = Router();
 
