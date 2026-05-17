@@ -4,9 +4,9 @@ import {
   getMealByIdController,
   updateMealController,
   addMealController,
-} from './meals.controller';
-import { validateUuidParam } from '../../middlewares/validate-uuid-param';
-import './meals.schema';
+} from '@/modules/meals/meals.controller';
+import { validateUuidParam } from '@/middlewares/validate-uuid-param';
+import '@/modules/meals/meals.schema';
 
 export const mealsRouter = Router();
 

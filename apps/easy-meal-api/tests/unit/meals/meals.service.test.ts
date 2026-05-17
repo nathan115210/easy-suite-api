@@ -1,26 +1,21 @@
-import type { Meal } from '../../../src/modules/meals/meals.schema';
-import { CookTimeValue, DifficultyLevel, MealType } from '../../../types/meals.types';
+import type { Meal } from '@/modules/meals/meals.schema';
+import { CookTimeValue, DifficultyLevel, MealType } from '@/types/meals.types';
 import {
   mealIngredientsTable,
   mealInstructionsTable,
   mealNutritionTable,
   mealTypesTable,
   mealsTable,
-} from '../../../src/db/schema';
+} from '@/db/schema';
 import { AppError } from '@easy-suite/utils';
 
-jest.mock('../../../src/db/index', () => ({
+jest.mock('@/db/index', () => ({
   db: { select: jest.fn(), transaction: jest.fn() },
   pool: {},
 }));
 
-import { db } from '../../../src/db/index';
-import {
-  getAllMeals,
-  getMealById,
-  updateMeal,
-  createMeal,
-} from '../../../src/modules/meals/meals.service';
+import { db } from '@/db/index';
+import { getAllMeals, getMealById, updateMeal, createMeal } from '@/modules/meals/meals.service';
 
 const mockSelect = db.select as jest.Mock;
 const mockTransaction = db.transaction as unknown as jest.Mock;

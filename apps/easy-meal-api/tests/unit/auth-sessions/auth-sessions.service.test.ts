@@ -1,6 +1,6 @@
-import { AuthErrorType, AuthError } from '../../../types/auth.types';
+import { AuthErrorType, AuthError } from '@/types/auth.types';
 
-jest.mock('../../../src/db/user.repository', () => ({
+jest.mock('@/db/user.repository', () => ({
   userRepository: {
     findByEmail: jest.fn(),
     findByUsername: jest.fn(),
@@ -9,7 +9,7 @@ jest.mock('../../../src/db/user.repository', () => ({
   },
 }));
 
-jest.mock('../../../src/db/session.repository', () => ({
+jest.mock('@/db/session.repository', () => ({
   sessionRepository: {
     createSession: jest.fn(),
     deleteById: jest.fn(),
@@ -19,13 +19,13 @@ jest.mock('../../../src/db/session.repository', () => ({
 
 const mockDbTransaction = jest.fn(async (callback: (tx: unknown) => unknown) => callback({}));
 
-jest.mock('../../../src/db/index', () => ({
+jest.mock('@/db/index', () => ({
   db: {
     transaction: mockDbTransaction,
   },
 }));
 
-jest.mock('../../../src/utils/auth-utils', () => ({
+jest.mock('@/utils/auth-utils', () => ({
   hashPassword: jest.fn(),
   verifyPassword: jest.fn(),
   toPublicUser: jest.fn((user: { id: string; username: string; email: string }) => ({
@@ -35,10 +35,10 @@ jest.mock('../../../src/utils/auth-utils', () => ({
   })),
 }));
 
-import { userRepository } from '../../../src/db/user.repository';
-import { sessionRepository } from '../../../src/db/session.repository';
-import { hashPassword, verifyPassword } from '../../../src/utils/auth-utils';
-import { authSessionsService } from '../../../src/modules/auth/auth-sessions/auth-sessions.service';
+import { userRepository } from '@/db/user.repository';
+import { sessionRepository } from '@/db/session.repository';
+import { hashPassword, verifyPassword } from '@/utils/auth-utils';
+import { authSessionsService } from '@/modules/auth/auth-sessions/auth-sessions.service';
 
 const mockFindByEmail = userRepository.findByEmail as jest.Mock;
 const mockFindByUsername = userRepository.findByUsername as jest.Mock;

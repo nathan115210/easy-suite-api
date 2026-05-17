@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError, type ApiError } from '@easy-suite/utils';
-import { AuthErrorType } from '../../types/auth.types';
+import { AuthErrorType } from '@/types/auth.types';
 
 export function errorHandler(
   err: unknown,

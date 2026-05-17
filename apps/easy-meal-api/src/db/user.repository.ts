@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
-import { usersTable } from './schema/user.table';
-import { db } from './index';
-import type { DbExecutor } from './types';
+import { usersTable } from '@/db/schema/user.table';
+import { db } from '@/db/index';
+import type { DbExecutor } from '@/db/types';
 
 type CreatedUser = {
   id: string;

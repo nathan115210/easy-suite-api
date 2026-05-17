@@ -1,14 +1,14 @@
-import { MealType } from '../../../types/meals.types';
-import { db } from '../../db';
+import { MealType } from '@/types/meals.types';
+import { db } from '@/db';
 import {
   mealsTable,
   mealTypesTable,
   mealIngredientsTable,
   mealInstructionsTable,
   mealNutritionTable,
-} from '../../db/schema';
-import { searchByKeywordCondition } from '../../utils/searchByKeyword';
-import { slugify } from '../../utils/slugify';
+} from '@/db/schema';
+import { searchByKeywordCondition } from '@/utils/searchByKeyword';
+import { slugify } from '@/utils/slugify';
 import type {
   AddMealBody,
   Meal,
@@ -18,7 +18,7 @@ import type {
   MealNutrition,
   MealSearchQuery,
   UpdateMealBody,
-} from './meals.schema';
+} from '@/modules/meals/meals.schema';
 import { and, asc, desc, eq, gt, inArray, lte, sql, type SQL } from 'drizzle-orm';
 import { AppError } from '@easy-suite/utils';
 

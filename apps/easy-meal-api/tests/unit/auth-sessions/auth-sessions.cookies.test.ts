@@ -2,8 +2,8 @@ import type { Response } from 'express';
 import {
   setSessionCookie,
   clearSessionCookie,
-} from '../../../src/modules/auth/auth-sessions/auth-sessions.cookies';
-import { AUTH_SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '../../../types/auth.types';
+} from '@/modules/auth/auth-sessions/auth-sessions.cookies';
+import { AUTH_SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/types/auth.types';
 
 function makeRes() {
   return {

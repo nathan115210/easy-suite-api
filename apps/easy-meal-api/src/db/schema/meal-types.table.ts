@@ -1,5 +1,5 @@
 import { index, pgEnum, pgTable, primaryKey, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { mealsTable } from './meals.table';
+import { mealsTable } from '@/db/schema/meals.table';
 
 export const mealTypeEnum = pgEnum('meal_type', [
   'breakfast',
