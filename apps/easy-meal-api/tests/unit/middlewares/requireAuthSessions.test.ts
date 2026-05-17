@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AuthErrorType, AUTH_SESSION_COOKIE_NAME } from '@/types/auth.types';
+import { AuthErrorType } from '@/types/auth.types';
+import { AUTH_SESSION_COOKIE_NAME } from '@/types/auth-sessions.types';
 
 jest.mock('@/db/session.repository', () => ({
   sessionRepository: {

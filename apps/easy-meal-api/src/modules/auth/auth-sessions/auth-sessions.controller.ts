@@ -1,12 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
+import { type ErrorResponseBody, AuthErrorType, AuthError } from '@/types/auth.types';
 import {
-  type ErrorResponseBody,
   AUTH_SESSION_COOKIE_NAME,
-  AuthErrorType,
-  AuthError,
-  sendAuthUser,
-  type UserAuthResponseBody,
-} from '@/types/auth.types';
+  sendAuthSessionUser,
+  type AuthSessionUserResponseBody,
+} from '@/types/auth-sessions.types';
 import {
   setSessionCookie,
   clearSessionCookie,
@@ -20,9 +18,14 @@ import {
   type SigninRequestInput,
 } from '@/modules/auth/auth-sessions/auth-sessions.schema';
 
+/*
+  signup returned:
+    - user only
+    - authSessionId cookie
+**/
 export async function signupController(
   req: Request<Record<string, string>, unknown, SignupRequestBody>,
-  res: Response<UserAuthResponseBody | ErrorResponseBody>,
+  res: Response<AuthSessionUserResponseBody | ErrorResponseBody>,
   next: NextFunction,
 ): Promise<void> {
   const parsed = SignupRequestSchema.safeParse(req.body);
@@ -40,7 +43,7 @@ export async function signupController(
   try {
     const result = await authSessionsService.signup(parsed.data);
     setSessionCookie(res, result.session.id);
-    sendAuthUser(res, 201, result.message, result.user);
+    sendAuthSessionUser(res, 201, result.message, result.user);
   } catch (error) {
     next(error);
   }
@@ -48,7 +51,7 @@ export async function signupController(
 
 export async function signinController(
   req: Request<Record<string, string>, unknown, SigninRequestInput>,
-  res: Response<UserAuthResponseBody | ErrorResponseBody>,
+  res: Response<AuthSessionUserResponseBody | ErrorResponseBody>,
   next: NextFunction,
 ): Promise<void> {
   const parsed = SigninRequestSchema.safeParse(req.body);
@@ -66,7 +69,7 @@ export async function signinController(
   try {
     const result = await authSessionsService.signin(parsed.data);
     setSessionCookie(res, result.session.id);
-    sendAuthUser(res, 200, result.message, result.user);
+    sendAuthSessionUser(res, 200, result.message, result.user);
   } catch (error) {
     next(error);
   }
@@ -74,7 +77,7 @@ export async function signinController(
 
 export async function getProfileController(
   req: Request,
-  res: Response<UserAuthResponseBody | ErrorResponseBody>,
+  res: Response<AuthSessionUserResponseBody | ErrorResponseBody>,
   next: NextFunction,
 ): Promise<void> {
   try {
@@ -87,7 +90,7 @@ export async function getProfileController(
       );
     }
     const user = await authSessionsService.getUserProfile(userId);
-    sendAuthUser(res, 200, user.message, user.user);
+    sendAuthSessionUser(res, 200, user.message, user.user);
   } catch (error) {
     if (error instanceof AuthError && error.code === AuthErrorType.USER_NOT_FOUND) {
       const sessionId = req.cookies?.[AUTH_SESSION_COOKIE_NAME];

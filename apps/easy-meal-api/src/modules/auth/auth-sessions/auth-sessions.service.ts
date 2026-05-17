@@ -1,17 +1,12 @@
-import {
-  type PublicUserData,
-  type AuthSession,
-  AuthError,
-  AuthErrorType,
-  SESSION_DURATION_MS,
-} from '@/types/auth.types';
+import { AuthError, AuthErrorType, type PublicUserData } from '@/types/auth.types';
+import { type AuthSession, SESSION_DURATION_MS } from '@/types/auth-sessions.types';
 import { logger } from '@easy-suite/utils';
 import { z } from 'zod';
 import type {
   SignupRequestBody,
   SigninRequestBody,
 } from '@/modules/auth/auth-sessions/auth-sessions.schema';
-import { hashPassword, toPublicUser, verifyPassword } from '@/utils/auth-utils';
+import { hashPasswordSafe, toPublicUser, verifyPassword } from '@/utils/auth-utils';
 import { userRepository } from '@/db/user.repository';
 import { sessionRepository } from '@/db/session.repository';
 import { db } from '@/db';
@@ -62,13 +57,7 @@ const signup = async (userData: SignupRequestBody): Promise<UserAuthSessionServi
     throw new AuthError(409, AuthErrorType.USERNAME_ALREADY_IN_USE, 'Username is already in use');
   }
 
-  let passwordHash: string;
-  try {
-    passwordHash = await hashPassword(password);
-  } catch (error) {
-    logger.error({ err: error }, 'Error hashing password');
-    throw new AuthError(500, AuthErrorType.PASSWORD_HASH_FAILED, 'Failed to process password');
-  }
+  const passwordHash = await hashPasswordSafe(password);
 
   try {
     const { createdUser, session } = await db.transaction(async (tx) => {
