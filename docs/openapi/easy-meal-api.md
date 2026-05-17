@@ -206,7 +206,7 @@ If a session points to a deleted user, the API treats it as an invalid session a
 
 #### `POST /v1/auth-sessions/signout`
 
-Signs out the current user by clearing the `authSessionId` cookie and deleting the session from the database.
+Signs out the current user by clearing the `authSessionId` cookie and deleting the current session from the database.
 
 No authentication cookie is required — if no session cookie is present the endpoint still returns `200`. If the session deletion fails server-side, the error is logged but does not affect the response.
 
@@ -219,6 +219,46 @@ None.
 ```json
 {
   "message": "Signout successful"
+}
+```
+
+**Response `500`** — internal server error
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Internal Server Error"
+  }
+}
+```
+
+#### `POST /v1/auth-sessions/signout-all`
+
+Signs out the authenticated user from **all** devices by deleting every session belonging to their account, then clearing the `authSessionId` cookie on the current device.
+
+Requires an active session — the `authSessionId` cookie must be present and valid.
+
+**Request body**
+
+None.
+
+**Response `200`**
+
+```json
+{
+  "message": "Signed out from all sessions"
+}
+```
+
+**Response `401`** — session missing or invalid
+
+```json
+{
+  "error": {
+    "code": "SESSION_MISSING | SESSION_NOT_FOUND",
+    "message": "string"
+  }
 }
 ```
 

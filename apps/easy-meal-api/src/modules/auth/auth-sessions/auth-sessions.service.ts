@@ -164,9 +164,21 @@ const signout = async (sessionId: string | undefined): Promise<void> => {
   });
 };
 
+const signoutAll = async (userId: string): Promise<void> => {
+  await sessionRepository.deleteAllByUserId(userId).catch((err) => {
+    logger.error({ err, userId }, 'Failed to delete all sessions for user');
+    throw new AuthError(
+      500,
+      AuthErrorType.DATABASE_ERROR,
+      'Failed to delete all sessions for user',
+    );
+  });
+};
+
 export const authSessionsService = {
   signup,
   signin,
   signout,
+  signoutAll,
   getUserProfile,
 };

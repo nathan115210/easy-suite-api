@@ -13,6 +13,7 @@ jest.mock('../../../src/db/session.repository', () => ({
   sessionRepository: {
     createSession: jest.fn(),
     deleteById: jest.fn(),
+    deleteAllByUserId: jest.fn(),
   },
 }));
 
@@ -45,6 +46,7 @@ const mockFindById = userRepository.findById as jest.Mock;
 const mockCreateUser = userRepository.create as jest.Mock;
 const mockCreateSession = sessionRepository.createSession as jest.Mock;
 const mockDeleteById = sessionRepository.deleteById as jest.Mock;
+const mockDeleteAllByUserId = sessionRepository.deleteAllByUserId as jest.Mock;
 const mockHashPassword = hashPassword as jest.Mock;
 const mockVerifyPassword = verifyPassword as jest.Mock;
 
@@ -393,5 +395,28 @@ describe('authSessionsService.signout', () => {
     await expect(authSessionsService.signout('session-id-abc123')).rejects.toThrow(
       new AuthError(500, AuthErrorType.DATABASE_ERROR, 'Failed to delete session on signout'),
     );
+  });
+});
+
+describe('authSessionsService.signoutAll', () => {
+  beforeEach(() => {
+    mockDeleteAllByUserId.mockResolvedValue(undefined);
+  });
+
+  it('calls sessionRepository.deleteAllByUserId with the given userId', async () => {
+    await authSessionsService.signoutAll('user-id-123');
+
+    expect(mockDeleteAllByUserId).toHaveBeenCalledWith('user-id-123');
+  });
+
+  it('resolves to undefined on success', async () => {
+    await expect(authSessionsService.signoutAll('user-id-123')).resolves.toBeUndefined();
+  });
+
+  it('propagates errors thrown by sessionRepository.deleteAllByUserId', async () => {
+    const dbError = new Error('Failed to delete all sessions for user');
+    mockDeleteAllByUserId.mockRejectedValue(new Error('DB delete failure'));
+
+    await expect(authSessionsService.signoutAll('user-id-123')).rejects.toThrow(dbError);
   });
 });

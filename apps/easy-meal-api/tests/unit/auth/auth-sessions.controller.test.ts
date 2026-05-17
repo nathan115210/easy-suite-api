@@ -8,6 +8,7 @@ import {
 import type {
   SignupRequestBody,
   SigninRequestBody,
+  SigninRequestInput,
 } from '../../../src/modules/auth/auth-sessions/auth-sessions.schema';
 
 jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.cookies', () => ({
@@ -21,6 +22,7 @@ jest.mock('../../../src/modules/auth/auth-sessions/auth-sessions.service', () =>
     signin: jest.fn(),
     getUserProfile: jest.fn(),
     signout: jest.fn(),
+    signoutAll: jest.fn(),
   },
 }));
 
@@ -46,6 +48,7 @@ import {
   signinController,
   getProfileController,
   signoutController,
+  signoutAllController,
 } from '../../../src/modules/auth/auth-sessions/auth-sessions.controller';
 
 const mockSetSessionCookie = setSessionCookie as jest.Mock;
@@ -54,6 +57,7 @@ const mockSignup = authSessionsService.signup as jest.Mock;
 const mockSignin = authSessionsService.signin as jest.Mock;
 const mockGetUserProfile = authSessionsService.getUserProfile as jest.Mock;
 const mockSignout = authSessionsService.signout as jest.Mock;
+const mockSignoutAll = authSessionsService.signoutAll as jest.Mock;
 const mockAuthLimiter = authLimiter as unknown as jest.Mock;
 const mockDeleteSessionById = sessionRepository.deleteById as jest.Mock;
 
@@ -91,6 +95,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockDeleteSessionById.mockResolvedValue(undefined);
   mockSignout.mockResolvedValue(undefined);
+  mockSignoutAll.mockResolvedValue(undefined);
   mockAuthLimiter.mockImplementation((req, res, next) => next());
 });
 
@@ -328,6 +333,7 @@ describe('signinController', () => {
       user: mockUser,
       session: mockSession,
     });
+
     const req = { body: validSigninBodyWithUsername } as unknown as Request<
       Record<string, string>,
       unknown,
@@ -339,6 +345,56 @@ describe('signinController', () => {
     await signinController(req, res, next);
 
     expect(mockSignin).toHaveBeenCalledWith(validSigninBodyWithUsername);
+  });
+
+  it('accepts "email" in the request body and transforms it to "identifier" for the service', async () => {
+    mockSignin.mockResolvedValue({
+      message: 'Signin successful',
+      user: mockUser,
+      session: mockSession,
+    });
+
+    const req = {
+      body: {
+        email: 'user17@test.com',
+        password: 'test_user_name_QQ_11',
+      },
+    } as unknown as Request<Record<string, string>, unknown, SigninRequestInput>;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(mockSignin).toHaveBeenCalledWith({
+      identifier: 'user17@test.com',
+      password: 'test_user_name_QQ_11',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('accepts "username" in the request body and transforms it to "identifier" for the service', async () => {
+    mockSignin.mockResolvedValue({
+      message: 'Signin successful',
+      user: mockUser,
+      session: mockSession,
+    });
+
+    const req = {
+      body: {
+        username: 'testuser123',
+        password: 'password123',
+      },
+    } as unknown as Request<Record<string, string>, unknown, SigninRequestInput>;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signinController(req, res, next);
+
+    expect(mockSignin).toHaveBeenCalledWith({
+      identifier: 'testuser123',
+      password: 'password123',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   it('returns 400 with VALIDATION_ERROR when identifier is not provided', async () => {
@@ -609,6 +665,70 @@ describe('signoutController', () => {
     await signoutController(req, res, next);
 
     expect(next).toHaveBeenCalledWith(unexpectedError);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe('signoutAllController', () => {
+  const userId = '550e8400-e29b-41d4-a716-446655440000';
+
+  it('calls next() with SESSION_MISSING AuthError when req.userId is not set', async () => {
+    const req = {} as Request;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutAllController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ code: AuthErrorType.SESSION_MISSING, statusCode: 401 }),
+    );
+    expect(mockSignoutAll).not.toHaveBeenCalled();
+    expect(mockClearSessionCookie).not.toHaveBeenCalled();
+  });
+
+  it('returns 200 with success message', async () => {
+    const req = { userId } as AuthenticatedRequest;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutAllController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Signed out from all sessions' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('calls authSessionsService.signoutAll with req.userId', async () => {
+    const req = { userId } as AuthenticatedRequest;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutAllController(req, res, next);
+
+    expect(mockSignoutAll).toHaveBeenCalledWith(userId);
+  });
+
+  it('clears the session cookie after deleting sessions', async () => {
+    const req = { userId } as AuthenticatedRequest;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutAllController(req, res, next);
+
+    expect(mockClearSessionCookie).toHaveBeenCalledWith(res);
+  });
+
+  it('calls next() with the error when service throws and does not clear the cookie', async () => {
+    const error = new Error('DB failure');
+    mockSignoutAll.mockRejectedValue(error);
+    const req = { userId } as AuthenticatedRequest;
+    const res = makeRes();
+    const next = makeNext();
+
+    await signoutAllController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(mockClearSessionCookie).not.toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
   });
 });

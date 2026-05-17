@@ -4,6 +4,7 @@ import {
   signinController,
   getProfileController,
   signoutController,
+  signoutAllController,
 } from './auth-sessions.controller';
 import { authLimiter, authReadLimiter } from '../../../middlewares/auth/auth-limiter';
 import './auth-sessions.schema';
@@ -15,3 +16,4 @@ authSessionsRouter.post('/signup', authLimiter, signupController);
 authSessionsRouter.post('/signin', authLimiter, signinController);
 authSessionsRouter.get('/profile', authReadLimiter, requireAuthSessions, getProfileController);
 authSessionsRouter.post('/signout', authLimiter, signoutController);
+authSessionsRouter.post('/signout-all', authLimiter, requireAuthSessions, signoutAllController);
