@@ -153,8 +153,20 @@ const getUserProfile = async (userId: string): Promise<UserAuthServiceResult> =>
   };
 };
 
+const signout = async (sessionId: string | undefined): Promise<void> => {
+  if (!sessionId) {
+    return;
+  }
+
+  await sessionRepository.deleteById(sessionId).catch((err) => {
+    logger.error({ err, sessionId }, 'Failed to delete session on signout');
+    throw new AuthError(500, AuthErrorType.DATABASE_ERROR, 'Failed to delete session on signout');
+  });
+};
+
 export const authSessionsService = {
   signup,
   signin,
+  signout,
   getUserProfile,
 };

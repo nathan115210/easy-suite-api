@@ -3,6 +3,7 @@ import {
   signupController,
   signinController,
   getProfileController,
+  signoutController,
 } from './auth-sessions.controller';
 import { authLimiter, authReadLimiter } from '../../../middlewares/auth/auth-limiter';
 import './auth-sessions.schema';
@@ -13,3 +14,4 @@ export const authSessionsRouter = Router();
 authSessionsRouter.post('/signup', authLimiter, signupController);
 authSessionsRouter.post('/signin', authLimiter, signinController);
 authSessionsRouter.get('/profile', authReadLimiter, requireAuthSessions, getProfileController);
+authSessionsRouter.post('/signout', authLimiter, signoutController);

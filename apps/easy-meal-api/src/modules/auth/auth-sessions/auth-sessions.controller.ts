@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   type ErrorResponseBody,
   AUTH_SESSION_COOKIE_NAME,
+  AUTH_CLEAR_COOKIE_OPTIONS,
   AuthErrorType,
   AuthError,
   sendAuthUser,
@@ -92,6 +93,26 @@ export async function getProfileController(
       return;
     }
 
+    next(error);
+  }
+}
+
+export async function signoutController(
+  req: Request,
+  res: Response<{ message: string } | ErrorResponseBody>,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const sessionId = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
+
+    res.clearCookie(AUTH_SESSION_COOKIE_NAME, AUTH_CLEAR_COOKIE_OPTIONS);
+
+    await authSessionsService.signout(sessionId);
+
+    res.status(200).json({
+      message: 'Signout successful',
+    });
+  } catch (error) {
     next(error);
   }
 }

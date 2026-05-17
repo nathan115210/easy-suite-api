@@ -176,6 +176,38 @@ registry.registerPath({
 });
 
 registry.registerPath({
+  method: 'post',
+  path: '/v1/auth-sessions/signout',
+  summary: 'Sign out and invalidate current session',
+  tags: ['Auth Sessions'],
+  responses: {
+    '200': {
+      description: 'Signout successful',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+          }),
+        },
+      },
+    },
+    '500': {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: z.object({
+            error: z.object({
+              code: z.string(),
+              message: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
   method: 'get',
   path: '/v1/auth-sessions/profile',
   summary: 'Get authenticated user profile',

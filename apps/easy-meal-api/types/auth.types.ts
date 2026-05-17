@@ -24,11 +24,15 @@ export const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 export const AUTH_SESSION_COOKIE_NAME = 'authSessionId';
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MIN_LENGTH_MESSAGE = 'Username must be at least 3 characters';
-export const AUTH_COOKIE_OPTIONS: CookieOptions = {
+export const AUTH_CLEAR_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
   path: '/',
+};
+
+export const AUTH_COOKIE_OPTIONS: CookieOptions = {
+  ...AUTH_CLEAR_COOKIE_OPTIONS,
   maxAge: SESSION_DURATION_MS,
 };
 
