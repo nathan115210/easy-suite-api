@@ -7,6 +7,12 @@ jest.mock('argon2', () => ({
   },
 }));
 
+jest.mock('@/db/session.repository', () => ({
+  sessionRepository: {
+    createTokenSession: jest.fn(),
+  },
+}));
+
 import argon2 from 'argon2';
 import { hashPassword, toPublicUser, verifyPassword } from '@/utils/auth-utils';
 
