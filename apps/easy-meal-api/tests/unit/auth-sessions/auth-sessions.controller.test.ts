@@ -1,10 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import {
-  AuthErrorType,
-  AuthError,
-  AUTH_SESSION_COOKIE_NAME,
-  type AuthenticatedRequest,
-} from '@/types/auth.types';
+import { AuthErrorType, AuthError, type AuthenticatedRequest } from '@/types/auth.types';
+import { AUTH_SESSION_COOKIE_NAME } from '@/types/auth-sessions.types';
 import type {
   SignupRequestBody,
   SigninRequestBody,

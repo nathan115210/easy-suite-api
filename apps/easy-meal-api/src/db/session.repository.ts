@@ -10,6 +10,14 @@ type CreatedSession = {
   createdAt: Date;
 };
 
+type CreateTokenSessionData = {
+  userId: string;
+  accessTokenHash: string;
+  accessTokenExpiresAt: Date;
+  refreshTokenHash: string;
+  refreshTokenExpiresAt: Date;
+  expiresAt: Date;
+};
 export const sessionRepository = {
   async createSession(
     sessionData: { userId: string; expiresAt: Date },
@@ -59,5 +67,28 @@ export const sessionRepository = {
       .returning({ id: userSessionsTable.id });
 
     return deletedSessions.length;
+  },
+
+  /// For token-based sessions, we create a session that includes the hashed tokens and their expiration times
+  async createTokenSession(data: CreateTokenSessionData) {
+    const [session] = await db
+      .insert(userSessionsTable)
+      .values({
+        userId: data.userId,
+        accessTokenHash: data.accessTokenHash,
+        accessTokenExpiresAt: data.accessTokenExpiresAt,
+        refreshTokenHash: data.refreshTokenHash,
+        refreshTokenExpiresAt: data.refreshTokenExpiresAt,
+        expiresAt: data.expiresAt,
+      })
+      .returning({
+        id: userSessionsTable.id,
+        userId: userSessionsTable.userId,
+        accessTokenExpiresAt: userSessionsTable.accessTokenExpiresAt,
+        refreshTokenExpiresAt: userSessionsTable.refreshTokenExpiresAt,
+        expiresAt: userSessionsTable.expiresAt,
+      });
+
+    return session;
   },
 };

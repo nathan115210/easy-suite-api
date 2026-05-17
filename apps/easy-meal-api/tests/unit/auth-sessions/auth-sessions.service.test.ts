@@ -26,7 +26,7 @@ jest.mock('@/db/index', () => ({
 }));
 
 jest.mock('@/utils/auth-utils', () => ({
-  hashPassword: jest.fn(),
+  hashPasswordSafe: jest.fn(),
   verifyPassword: jest.fn(),
   toPublicUser: jest.fn((user: { id: string; username: string; email: string }) => ({
     id: user.id,
@@ -37,7 +37,7 @@ jest.mock('@/utils/auth-utils', () => ({
 
 import { userRepository } from '@/db/user.repository';
 import { sessionRepository } from '@/db/session.repository';
-import { hashPassword, verifyPassword } from '@/utils/auth-utils';
+import { hashPasswordSafe, verifyPassword } from '@/utils/auth-utils';
 import { authSessionsService } from '@/modules/auth/auth-sessions/auth-sessions.service';
 
 const mockFindByEmail = userRepository.findByEmail as jest.Mock;
@@ -47,7 +47,7 @@ const mockCreateUser = userRepository.create as jest.Mock;
 const mockCreateSession = sessionRepository.createSession as jest.Mock;
 const mockDeleteById = sessionRepository.deleteById as jest.Mock;
 const mockDeleteAllByUserId = sessionRepository.deleteAllByUserId as jest.Mock;
-const mockHashPassword = hashPassword as jest.Mock;
+const mockHashPasswordSafe = hashPasswordSafe as jest.Mock;
 const mockVerifyPassword = verifyPassword as jest.Mock;
 
 const validUserData = {
@@ -79,7 +79,7 @@ const mockDbUser = {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  mockHashPassword.mockResolvedValue('hashed_password');
+  mockHashPasswordSafe.mockResolvedValue('hashed_password');
   mockFindByEmail.mockResolvedValue(null);
   mockFindByUsername.mockResolvedValue(null);
   mockCreateUser.mockResolvedValue(mockCreatedUser);
@@ -100,7 +100,7 @@ describe('authSessionsService.signup', () => {
   it('hashes the password and passes it to userRepository.create', async () => {
     await authSessionsService.signup(validUserData);
 
-    expect(mockHashPassword).toHaveBeenCalledWith(validUserData.password);
+    expect(mockHashPasswordSafe).toHaveBeenCalledWith(validUserData.password);
     expect(mockCreateUser).toHaveBeenCalledWith(
       expect.objectContaining({ passwordHash: 'hashed_password' }),
       expect.any(Object),
@@ -180,8 +180,10 @@ describe('authSessionsService.signup', () => {
     });
   });
 
-  it('throws PASSWORD_HASH_FAILED when hashPassword throws', async () => {
-    mockHashPassword.mockRejectedValue(new Error('Argon2 failure'));
+  it('throws PASSWORD_HASH_FAILED when hashPasswordSafe throws', async () => {
+    mockHashPasswordSafe.mockRejectedValue(
+      new AuthError(500, AuthErrorType.PASSWORD_HASH_FAILED, 'Failed to process password'),
+    );
 
     await expect(authSessionsService.signup(validUserData)).rejects.toMatchObject({
       statusCode: 500,

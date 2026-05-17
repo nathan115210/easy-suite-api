@@ -1,5 +1,5 @@
 import { AppError } from '@easy-suite/utils';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -20,8 +20,6 @@ export interface AuthenticatedRequest extends Request {
   userId: string;
 }
 
-export const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
-export const AUTH_SESSION_COOKIE_NAME = 'authSessionId';
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MIN_LENGTH_MESSAGE = 'Username must be at least 3 characters';
 
@@ -53,40 +51,9 @@ export type ErrorResponseBody = {
   };
 };
 
-export type UserAuthResponseBody = {
-  message: string;
-  data: {
-    user: {
-      id: string;
-      username: string;
-      email: string;
-    };
-  };
-};
-
 export class AuthError extends AppError {
   constructor(statusCode: number, code: AuthErrorType, message: string, details?: unknown) {
     super(statusCode, code, message, details);
     this.name = 'AuthError';
   }
-}
-
-export type AuthSession = {
-  id: string;
-  expiresAt: Date;
-};
-
-/**
- * Helper to send standardized auth user response
- */
-export function sendAuthUser(
-  res: Response<UserAuthResponseBody>,
-  status: 200 | 201,
-  message: string,
-  user: PublicUserData,
-) {
-  return res.status(status).json({
-    message,
-    data: { user },
-  });
 }

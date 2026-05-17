@@ -3,7 +3,7 @@ import {
   setSessionCookie,
   clearSessionCookie,
 } from '@/modules/auth/auth-sessions/auth-sessions.cookies';
-import { AUTH_SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/types/auth.types';
+import { AUTH_SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '@/types/auth-sessions.types';
 
 function makeRes() {
   return {
